@@ -58,7 +58,9 @@ export function useItemActions() {
     usePaletteItem();
 
   const isViewable =
-    selectedItem?.kind === "pr" || selectedItem?.kind === "repo";
+    selectedItem?.kind === "pr" ||
+    selectedItem?.kind === "repo" ||
+    selectedItem?.kind === "org";
   const actions: ItemAction[] = [
     {
       id: "primaryAction",
@@ -96,9 +98,8 @@ export function useItemActions() {
     const org = selectedItem.data;
     actions.push({
       id: "secondaryAction",
-      label: "Browse organization",
-      run: () =>
-        state.goTo({ to: "org", params: { name: org.login } }, org.login),
+      label: "Open on GitHub",
+      run: () => openUrl(org.url),
     });
   }
 

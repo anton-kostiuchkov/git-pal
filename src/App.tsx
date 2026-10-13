@@ -22,8 +22,8 @@ function useAppQuery() {
       const theme = globalThis.settings.theme;
 
       userProfile.organizations.nodes?.forEach((org) => {
-        if (org?.name) {
-          state.setItem(org.name, { kind: "org", data: org });
+        if (org) {
+          state.setItem(org.login, { kind: "org", data: org });
         }
       });
 

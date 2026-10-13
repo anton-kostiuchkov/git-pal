@@ -83,10 +83,7 @@ pub async fn find_repositories(
     state: State<'_, AppState>,
     params: FindRepositoriesRequest,
 ) -> Result<FindRepositoriesResult> {
-    Ok(state
-        .github_client
-        .find_repositories(params, &state.search_scope())
-        .await?)
+    Ok(state.github_client.find_repositories(params).await?)
 }
 
 #[tauri::command]

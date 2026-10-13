@@ -152,11 +152,11 @@ export function HomePage() {
           {userProfile.organizations.nodes.filter(nil).map((v) => {
             return (
               <CommandItem
-                value={v.name || v.login}
+                value={v.login}
                 key={v.login}
                 keywords={[v.name || v.login, "organizations"]}
                 onSelect={() => {
-                  openUrl(v.url);
+                  state.goTo({ to: "org", params: { name: v.login } }, v.login);
                 }}
               >
                 <OrganizationItem organization={v} />

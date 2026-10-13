@@ -60,7 +60,7 @@ On a repository's pull requests, type `@` followed by a login. Pick a suggestion
 
 ## Organizations
 
-<kbd>Tab</kbd> on an organization browses its repositories, searched on GitHub as you type. <kbd>↵</kbd> opens it on GitHub.
+<kbd>↵</kbd> on an organization browses its repositories, searched on GitHub as you type. <kbd>Tab</kbd> opens it on GitHub.
 
 ## Code search
 
@@ -79,7 +79,7 @@ Windows and Linux use <kbd>Ctrl</kbd> where macOS uses <kbd>⌘</kbd>. Press <kb
 | Action | macOS |
 | --- | --- |
 | Open or view | <kbd>↵</kbd> |
-| Browse organization, or open on GitHub | <kbd>Tab</kbd> |
+| Open on GitHub | <kbd>Tab</kbd> |
 | Show actions | <kbd>⌘</kbd> <kbd>K</kbd> |
 | Review | <kbd>⌘</kbd> <kbd>↵</kbd> |
 | Review with template | <kbd>⇧</kbd> <kbd>⌘</kbd> <kbd>↵</kbd> |

@@ -75,13 +75,6 @@ fn matches(entry: &str, owner: &str, repo: &str) -> bool {
     }
 }
 
-fn owned_by<'a>(entries: &'a [String], owner: &'a str) -> impl Iterator<Item = &'a String> {
-    entries.iter().filter(move |e| {
-        e.split_once('/')
-            .is_some_and(|(o, _)| o.eq_ignore_ascii_case(owner))
-    })
-}
-
 fn fits(query: &str) -> bool {
     query.chars().count() <= MAX_QUERY_CHARS
 }
@@ -108,31 +101,6 @@ impl SearchScope {
 
         if !fits(&query) {
             return base.to_string();
-        }
-
-        query
-    }
-
-    /// Repository name search within `owner`. Included repositories replace the owner
-    /// unless all of it is included, repositories of other owners can't narrow it.
-    pub fn owner_repository_query(&self, owner: &str, terms: &str) -> String {
-        let base = format!("org:{owner} in:name {terms}");
-        let owner_included = self.include.iter().any(|e| e.eq_ignore_ascii_case(owner));
-        let included_repos: Vec<String> = owned_by(&self.include, owner)
-            .map(|e| qualifier(e))
-            .collect();
-
-        let mut parts = if owner_included || included_repos.is_empty() {
-            vec![format!("org:{owner}")]
-        } else {
-            included_repos
-        };
-        parts.push(format!("in:name {terms}"));
-        parts.extend(owned_by(&self.exclude, owner).map(|e| format!("-{}", qualifier(e))));
-
-        let query = parts.join(" ");
-        if !fits(&query) {
-            return base;
         }
 
         query
@@ -187,25 +155,5 @@ mod tests {
         };
 
         assert_eq!(s.narrow("is:pr"), "is:pr");
-    }
-
-    #[test]
-    fn owner_query_uses_included_repositories() {
-        let s = scope(&["collibra/frontend", "other/x"], &["collibra/legacy"]);
-
-        assert_eq!(
-            s.owner_repository_query("collibra", "front"),
-            "repo:collibra/frontend in:name front -repo:collibra/legacy"
-        );
-    }
-
-    #[test]
-    fn owner_query_keeps_org_when_fully_included() {
-        let s = scope(&["collibra", "collibra/frontend"], &[]);
-
-        assert_eq!(
-            s.owner_repository_query("collibra", ""),
-            "org:collibra in:name "
-        );
     }
 }

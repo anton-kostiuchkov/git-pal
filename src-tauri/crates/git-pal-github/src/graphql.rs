@@ -7,7 +7,6 @@ use ts_rs::TS;
 
 use crate::api_client::{Client, Response, Result};
 use crate::github::{Error, Metadata};
-use crate::query::find_repositories::FindRepositoriesSearchNodes;
 use crate::query::search_pull_request::SearchPullRequestSearchNodes;
 use crate::query::user_profile::UserProfileViewerOrganizations;
 use crate::query::{self};
@@ -118,24 +117,13 @@ impl Client {
     pub async fn find_repositories(
         &self,
         params: FindRepositoriesRequest,
-        scope: &SearchScope,
     ) -> Result<FindRepositoriesResult> {
         let q = query::FindRepositories::build_query(query::find_repositories::Variables {
             count: 20,
-            query: scope.owner_repository_query(&params.owner, &params.query),
+            query: format!("org:{} in:name {}", params.owner, params.query),
         });
 
-        let mut res: FindRepositoriesResult = self.send_graphql(&q).await?;
-        if let Some(nodes) = res.data.as_mut().and_then(|d| d.search.nodes.as_mut()) {
-            nodes.retain(|node| match node {
-                Some(FindRepositoriesSearchNodes::Repository(repo)) => {
-                    scope.allows(&repo.owner.login, &repo.name)
-                }
-                _ => true,
-            });
-        }
-
-        Ok(res)
+        self.send_graphql(&q).await
     }
 
     pub async fn find_pull_requests(
