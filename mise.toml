@@ -2,6 +2,7 @@
 node = "24.21.0"
 pnpm = "12.4.2"
 rust = "1.98.1"
+"cargo:cargo-edit" = "latest"
 
 [tasks."codegen:ts"]
 description = "Generate TypeScript bindings"
@@ -26,3 +27,39 @@ run = "pnpm tauri dev"
 description = "Build the app"
 run = "pnpm tauri build"
 
+
+[tasks."bump"]
+description = "Bump app version"
+dir = "src-tauri"
+usage = '''
+  arg "<version>" help="Next version for the bump" {
+    choices "patch" "minor" "major"
+  }
+  flag "--create-tag" help="Create git tag"
+'''
+run = '''
+#!/usr/bin/env bash
+
+cargo set-version --bump $usage_version
+new_version=$(cargo pkgid | cut -d@ -f2)
+
+jq --arg v $new_version '.version = $v' tauri.conf.json > tauri.conf.json.new
+mv -f tauri.conf.json.new tauri.conf.json
+
+jq --arg v $new_version '.version = $v' ../package.json > ../package.json.new
+mv -f ../package.json.new ../package.json
+
+echo "New version: $new_version"
+
+if [ "${usage_create_tag:-false}" = "true" ]; then
+
+  if [ ! -z "$(git status --porcelain)" ]; then
+    echo "The working directory is not clean, cannot create the tag"
+    exit 1
+  fi
+
+  git add --all
+  git commit -m "bump version $new_version"
+  git tag -a v$new_version -m "v$new_version"
+fi
+'''
