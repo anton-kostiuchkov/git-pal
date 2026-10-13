@@ -6,7 +6,7 @@ import type {
   ReviewListEntry,
 } from "~/models/code-review";
 
-import { isSameReview } from "./utils";
+import { type FileStatusGroup, isSameReview } from "./utils";
 
 type RefreshStatus = "idle" | "checking" | "no-changes";
 export type FileView = "tree" | "list";
@@ -34,6 +34,7 @@ interface State {
   viewType: ViewType;
   fileView: FileView;
   isOwnedOnly: boolean;
+  hiddenStatuses: FileStatusGroup[];
   refreshStatus: RefreshStatus;
   isSubmitOpen: boolean;
   drafts: Record<string, string>;
@@ -48,6 +49,7 @@ const state = proxy<State>({
   viewType: "split",
   fileView: savedFileView(),
   isOwnedOnly: false,
+  hiddenStatuses: [],
   refreshStatus: "idle",
   isSubmitOpen: false,
   drafts: {},
@@ -72,6 +74,15 @@ export const store = {
   },
   toggleOwnedOnly() {
     state.isOwnedOnly = !state.isOwnedOnly;
+  },
+  toggleStatus(group: FileStatusGroup) {
+    const hidden = state.hiddenStatuses;
+    if (hidden.includes(group)) {
+      state.hiddenStatuses = hidden.filter((g) => g !== group);
+      return;
+    }
+
+    hidden.push(group);
   },
   setFileView(view: FileView) {
     state.fileView = view;

@@ -77,6 +77,7 @@ import { useAgentEvent } from "./useAgentEvent";
 import { useRefreshPullRequest } from "./useRefreshPullRequest";
 import {
   buildThreads,
+  fileStatusGroup,
   isPendingComment,
   reviewCommentContext,
   threadContext,
@@ -151,11 +152,17 @@ export function ReviewPage() {
     () => (ownedQuery.data ? new Set(ownedQuery.data) : null),
     [ownedQuery.data],
   );
-  const files = useMemo(() => {
-    if (!snapshot.isOwnedOnly || !ownedFiles) return allFiles;
+  const { isOwnedOnly, hiddenStatuses } = snapshot;
+  const files = useMemo(
+    () =>
+      allFiles.filter((f) => {
+        if (hiddenStatuses.includes(fileStatusGroup(f.status))) return false;
+        if (!isOwnedOnly || !ownedFiles) return true;
 
-    return allFiles.filter((f) => ownedFiles.has(f.filename));
-  }, [allFiles, ownedFiles, snapshot.isOwnedOnly]);
+        return ownedFiles.has(f.filename);
+      }),
+    [allFiles, ownedFiles, isOwnedOnly, hiddenStatuses],
+  );
   const currentFile =
     files.find((f) => f.filename === selectedFile) ?? files[0];
 

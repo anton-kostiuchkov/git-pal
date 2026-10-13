@@ -159,6 +159,28 @@ export function getFileStatusColor(status: string): string {
   }
 }
 
+export type FileStatusGroup = "modified" | "removed" | "added" | "renamed";
+
+export const FILE_STATUS_GROUPS: { group: FileStatusGroup; label: string }[] = [
+  { group: "modified", label: "Modified" },
+  { group: "removed", label: "Deleted" },
+  { group: "added", label: "New file" },
+  { group: "renamed", label: "Renamed" },
+];
+
+export function fileStatusGroup(status: string): FileStatusGroup {
+  switch (status) {
+    case "added":
+    case "removed":
+    case "renamed":
+      return status;
+    case "copied":
+      return "renamed";
+    default:
+      return "modified";
+  }
+}
+
 export function getDiffType(
   status: string,
 ): "add" | "delete" | "modify" | "rename" | "copy" {

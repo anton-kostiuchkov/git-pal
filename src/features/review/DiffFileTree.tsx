@@ -3,6 +3,7 @@ import {
   Folder,
   FolderOpen,
   List,
+  ListFilter,
   ListTree,
   MessageSquare,
   Search,
@@ -14,6 +15,12 @@ import { useMemo, useRef, useState } from "react";
 import { ListView } from "~/components/list-view";
 import { TreeView, type TreeNode } from "~/components/tree-view";
 import { Button } from "~/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import {
   InputGroup,
   InputGroupAddon,
@@ -31,7 +38,12 @@ import type { ReviewComment } from "~/models/code-review";
 
 import { type FileView, store, useCodeReviewSnapshot } from "./store";
 import { severityConfig } from "./ReviewCommentWidget";
-import { getFileStatusColor, getFileStatusIcon } from "./utils";
+import {
+  FILE_STATUS_GROUPS,
+  type FileStatusGroup,
+  getFileStatusColor,
+  getFileStatusIcon,
+} from "./utils";
 
 const FILES_FOCUS_TARGET =
   '[role="treeitem"][tabindex="0"], [role="option"][tabindex="0"]';
@@ -70,7 +82,7 @@ export function DiffFileTree({
   deletions,
   searchRef,
 }: DiffFileTreeProps) {
-  const { fileView, isOwnedOnly } = useCodeReviewSnapshot();
+  const { fileView, isOwnedOnly, hiddenStatuses } = useCodeReviewSnapshot();
   const fileCount =
     files.length === totalFiles ? totalFiles : `${files.length}/${totalFiles}`;
   const [filter, setFilter] = useState("");
@@ -140,6 +152,7 @@ export function DiffFileTree({
             </InputGroupAddon>
           )}
         </InputGroup>
+        <StatusFilter hidden={hiddenStatuses} />
         {ownedFiles && <OwnedToggle isActive={isOwnedOnly} />}
       </div>
       <div
@@ -148,7 +161,9 @@ export function DiffFileTree({
       >
         {visibleFiles.length === 0 && (
           <p className="p-2 text-center text-xs text-muted-foreground">
-            {query ? "No matching files" : "No files owned by you"}
+            {query || hiddenStatuses.length > 0
+              ? "No matching files"
+              : "No files owned by you"}
           </p>
         )}
 
@@ -224,6 +239,39 @@ function OwnedToggle({ isActive }: { isActive: boolean }) {
       />
       <TooltipContent>{label}</TooltipContent>
     </Tooltip>
+  );
+}
+
+function StatusFilter({ hidden }: { hidden: readonly FileStatusGroup[] }) {
+  const isActive = hidden.length > 0;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant={isActive ? "secondary" : "ghost"}
+            size="icon-xs"
+            aria-label="Filter by status"
+            title="Filter by status"
+          >
+            <ListFilter />
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="end" className="w-36">
+        {FILE_STATUS_GROUPS.map(({ group, label }) => (
+          <DropdownMenuCheckboxItem
+            key={group}
+            checked={!hidden.includes(group)}
+            onCheckedChange={() => store.toggleStatus(group)}
+            closeOnClick={false}
+          >
+            {label}
+          </DropdownMenuCheckboxItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

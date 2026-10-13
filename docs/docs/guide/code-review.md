@@ -85,7 +85,7 @@ A new commit or a pending comment puts a submitted pull request back in progress
 
 ## Files and diff
 
-- The file tree shows each file's changes and comments, colored by severity. Switch between tree and list, search with <kbd>⇧</kbd> <kbd>⌘</kbd> <kbd>F</kbd>, and show **Only files owned by me** when the repository has a `CODEOWNERS` file.
+- The file tree shows each file's changes and comments, colored by severity. Switch between tree and list, search with <kbd>⇧</kbd> <kbd>⌘</kbd> <kbd>F</kbd>, filter by status (Modified, Deleted, New file, Renamed), and show **Only files owned by me** when the repository has a `CODEOWNERS` file.
 - Tick **Viewed** to dim a file and jump to the next one. A viewed file that changes is unticked.
 - Switch between split and unified diffs with <kbd>⌘</kbd> <kbd>S</kbd>. Narrow windows switch to unified on their own.
 - Expand hidden lines around each hunk, and find in the file with <kbd>⌘</kbd> <kbd>F</kbd>.
