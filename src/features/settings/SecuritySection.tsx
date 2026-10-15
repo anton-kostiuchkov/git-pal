@@ -45,6 +45,7 @@ function formatDate(value: string) {
 
 export function SecuritySection() {
   const [openPATDialog, togglePATDialog] = useState(false);
+  const [openDeleteDialog, toggleDeleteDialog] = useState(false);
   const { data, refetch } = useQuery({
     queryKey: ["get_token"],
     queryFn: commands.getToken,
@@ -63,6 +64,11 @@ export function SecuritySection() {
   const handleAuthSuccess = () => {
     refetch();
     closeDialog();
+  };
+
+  const deleteToken = async () => {
+    await commands.deleteToken();
+    toggleDeleteDialog(false);
   };
 
   return (
@@ -109,7 +115,7 @@ export function SecuritySection() {
 
       <div className="mt-4 flex flex-col gap-2">
         <Separator />
-        <AlertDialog>
+        <AlertDialog open={openDeleteDialog} onOpenChange={toggleDeleteDialog}>
           <AlertDialogTrigger
             render={
               <Button variant="destructive" className="ml-auto">
@@ -132,7 +138,7 @@ export function SecuritySection() {
               </AlertDialogCancel>
               <AlertDialogAction
                 render={<Button variant="destructive" />}
-                onClick={commands.deleteToken}
+                onClick={deleteToken}
               >
                 <Trash />
                 Delete
