@@ -5,6 +5,8 @@ import { StarterKit } from "@tiptap/starter-kit";
 import { cn } from "cn";
 import { useLayoutEffect, useRef } from "react";
 
+import { isModPressed } from "~/libs/keymap";
+
 import { CodeBlock } from "./rich-text-code-block";
 import { EmojiExtension, isSuggestingEmoji } from "./rich-text-emoji";
 import {
@@ -81,7 +83,7 @@ export function RichTextEditor({
         if (isSuggestingEmoji(view.state) || isSuggestingMention(view.state))
           return false;
 
-        if (event.key === "Enter" && event.metaKey && onSubmit) {
+        if (event.key === "Enter" && isModPressed(event) && onSubmit) {
           onSubmit();
           return true;
         }

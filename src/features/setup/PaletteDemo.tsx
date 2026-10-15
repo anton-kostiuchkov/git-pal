@@ -19,6 +19,7 @@ import {
 import { Page, PullRequestStatusIcon } from "~/features/palette/Github";
 import { ReviewDecision } from "~/features/palette/Github/ReviewDecision";
 import { Container } from "~/features/palette/Layout";
+import { shortcutSymbols } from "~/libs/keymap";
 import type { PullRequestReviewDecision } from "~/models";
 
 export interface DemoPullRequest {
@@ -142,7 +143,11 @@ export function PaletteDemo({ typed, isOpening }: Props) {
       </CommandList>
 
       <footer className="mt-1 flex h-12 items-center justify-end gap-2 border-t p-2 text-xs">
-        <Keybind label="Help" keys={["⌘", "/"]} className="mr-auto" />
+        <Keybind
+          label="Help"
+          keys={shortcutSymbols(globalThis.settings.keybind.palette.help)}
+          className="mr-auto"
+        />
         <Keybind label={isPullRequest ? "Review" : "Open"} keys={["↵"]} />
       </footer>
     </Command>

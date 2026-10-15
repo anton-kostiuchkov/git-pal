@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import commands from "~/commands";
 import { Button } from "~/components/ui/button";
 import { Kbd, KbdGroup } from "~/components/ui/kbd";
-import { ModifierSymbol } from "~/libs/keymap";
+import { MOD_KEY, ModifierSymbol } from "~/libs/keymap";
 import { AppUpdate } from "~/models/updater";
 
 export function UpdateAppButton() {
@@ -59,7 +59,7 @@ function ButtonWrapper() {
       >
         Update
         <KbdGroup>
-          <Kbd>{ModifierSymbol.cmd}</Kbd>
+          <Kbd>{ModifierSymbol[MOD_KEY]}</Kbd>
           <Kbd>U</Kbd>
         </KbdGroup>
       </Button>

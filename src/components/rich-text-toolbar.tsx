@@ -26,6 +26,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
+import { MOD_KEY } from "~/libs/keymap";
 
 const ACTIVE_CLASS =
   "bg-primary/20 text-primary hover:bg-primary/25 hover:text-primary";
@@ -142,7 +143,7 @@ export function RichTextToolbar({ editor }: { editor: Editor }) {
     <div className="flex flex-wrap items-center gap-0.5">
       <ToolbarButton
         label="Bold"
-        shortcut="cmd+B"
+        shortcut={`${MOD_KEY}+B`}
         active={state.bold}
         onClick={() => run().toggleBold().run()}
       >
@@ -150,7 +151,7 @@ export function RichTextToolbar({ editor }: { editor: Editor }) {
       </ToolbarButton>
       <ToolbarButton
         label="Italic"
-        shortcut="cmd+I"
+        shortcut={`${MOD_KEY}+I`}
         active={state.italic}
         onClick={() => run().toggleItalic().run()}
       >
@@ -158,7 +159,7 @@ export function RichTextToolbar({ editor }: { editor: Editor }) {
       </ToolbarButton>
       <ToolbarButton
         label="Strikethrough"
-        shortcut="shift+cmd+S"
+        shortcut={`shift+${MOD_KEY}+S`}
         active={state.strike}
         onClick={() => run().toggleStrike().run()}
       >
@@ -168,7 +169,7 @@ export function RichTextToolbar({ editor }: { editor: Editor }) {
       <span className="mx-1 h-4 w-px bg-border" />
       <ToolbarButton
         label="Inline code"
-        shortcut="cmd+E"
+        shortcut={`${MOD_KEY}+E`}
         active={state.code}
         onClick={() => run().toggleCode().run()}
       >
@@ -176,7 +177,7 @@ export function RichTextToolbar({ editor }: { editor: Editor }) {
       </ToolbarButton>
       <ToolbarButton
         label="Code block"
-        shortcut="cmd+alt+C"
+        shortcut={`${MOD_KEY}+alt+C`}
         active={state.codeBlock}
         onClick={() => run().toggleCodeBlock().run()}
       >
@@ -185,7 +186,7 @@ export function RichTextToolbar({ editor }: { editor: Editor }) {
       <span className="mx-1 h-4 w-px bg-border" />
       <ToolbarButton
         label="Bullet list"
-        shortcut="shift+cmd+8"
+        shortcut={`shift+${MOD_KEY}+8`}
         active={state.bulletList}
         onClick={() => run().toggleBulletList().run()}
       >
@@ -193,7 +194,7 @@ export function RichTextToolbar({ editor }: { editor: Editor }) {
       </ToolbarButton>
       <ToolbarButton
         label="Numbered list"
-        shortcut="shift+cmd+7"
+        shortcut={`shift+${MOD_KEY}+7`}
         active={state.orderedList}
         onClick={() => run().toggleOrderedList().run()}
       >
@@ -201,7 +202,7 @@ export function RichTextToolbar({ editor }: { editor: Editor }) {
       </ToolbarButton>
       <ToolbarButton
         label="Quote"
-        shortcut="shift+cmd+B"
+        shortcut={`shift+${MOD_KEY}+B`}
         active={state.blockquote}
         onClick={() => run().toggleBlockquote().run()}
       >

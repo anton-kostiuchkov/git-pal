@@ -119,12 +119,24 @@ export const Keymap: Record<string, string> = {
   _NumLock: "NUMLOCK",
 };
 
+const WINDOWS_KEY = "⊞";
+
+const IS_MAC = navigator.userAgent.includes("Mac");
+
+/** The app shortcut modifier: ⌘ on macOS, ctrl elsewhere */
+export const MOD_KEY = IS_MAC ? "cmd" : "ctrl";
+
+export function isModPressed(event: { metaKey: boolean; ctrlKey: boolean }) {
+  return IS_MAC ? event.metaKey : event.ctrlKey;
+}
+
 export const ModifierSymbol: Record<string, string> = {
   ctrl: "ctrl",
   shift: "⇧",
   alt: "⌥",
-  cmd: "⌘",
-  super: "⊞",
+  // the meta key, ⌘ only on macOS
+  cmd: IS_MAC ? "⌘" : WINDOWS_KEY,
+  super: WINDOWS_KEY,
 };
 
 export const MainKeySymbol: Record<string, string> = {
