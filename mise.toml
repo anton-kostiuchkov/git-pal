@@ -40,26 +40,29 @@ usage = '''
 run = '''
 #!/usr/bin/env bash
 
-cargo set-version --bump $usage_version
+if [[ "${usage_create_tag:-false}" = "true" && -n "$(git status --porcelain)" ]]; then
+  echo "The working directory is not clean, cannot create the tag"
+  exit 1
+fi
+
+cargo set-version --bump "$usage_version"
 new_version=$(cargo pkgid | cut -d@ -f2)
 
-jq --arg v $new_version '.version = $v' tauri.conf.json > tauri.conf.json.new
-mv -f tauri.conf.json.new tauri.conf.json
+# Helper function to update JSON version files safely
+update_json_version() {
+  local file="$1"
+  jq --arg v "$new_version" '.version = $v' "$file" > "$file.tmp" && mv -f "$file.tmp" "$file"
+}
 
-jq --arg v $new_version '.version = $v' ../package.json > ../package.json.new
-mv -f ../package.json.new ../package.json
+update_json_version "tauri.conf.json"
+update_json_version "../package.json"
 
 echo "New version: $new_version"
 
-if [ "${usage_create_tag:-false}" = "true" ]; then
-
-  if [ ! -z "$(git status --porcelain)" ]; then
-    echo "The working directory is not clean, cannot create the tag"
-    exit 1
-  fi
-
+# Commit and tag if requested
+if [[ "${usage_create_tag:-false}" = "true" ]]; then
   git add --all
   git commit -m "bump version $new_version"
-  git tag -a v$new_version -m "v$new_version"
+  git tag -a "v$new_version" -m "v$new_version"
 fi
 '''
