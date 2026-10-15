@@ -13,6 +13,8 @@ The first time Git Pal reads its token, macOS may ask for your password to unloc
 
 Download the `-setup.exe` (or the `.msi`) and run it.
 
+The installer isn't code signed yet, so SmartScreen may show "Windows protected your PC". Click **More info**, then **Run anyway**.
+
 ## Linux
 
 Download the package for your distribution:

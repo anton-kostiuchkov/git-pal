@@ -89,6 +89,8 @@ Download the `.dmg`: `aarch64` for Apple Silicon, `x64` for Intel. Open it and d
 
 Download the `-setup.exe` (or the `.msi`) and run it.
 
+The installer isn't code signed yet, so SmartScreen may show "Windows protected your PC". Click **More info**, then **Run anyway**.
+
 ### Linux
 
 Download the package for your distribution:
