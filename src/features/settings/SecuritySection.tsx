@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Clock, Copy, Eye, EyeOff, KeyRound, Trash } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useState } from "react";
@@ -46,6 +46,7 @@ function formatDate(value: string) {
 export function SecuritySection() {
   const [openPATDialog, togglePATDialog] = useState(false);
   const [openDeleteDialog, toggleDeleteDialog] = useState(false);
+  const queryClient = useQueryClient();
   const { data, refetch } = useQuery({
     queryKey: ["get_token"],
     queryFn: commands.getToken,
@@ -69,6 +70,8 @@ export function SecuritySection() {
   const deleteToken = async () => {
     await commands.deleteToken();
     toggleDeleteDialog(false);
+
+    queryClient.setQueryData(["get_token"], null);
   };
 
   return (

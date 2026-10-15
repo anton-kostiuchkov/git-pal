@@ -51,6 +51,8 @@ pub fn delete_token(state: State<'_, AppState>) -> Result<()> {
         return Err(CommandError::UnableToDeleteToken);
     }
 
+    state.github_client.clear_token();
+
     Ok(())
 }
 

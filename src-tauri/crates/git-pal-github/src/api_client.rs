@@ -132,6 +132,11 @@ impl Client {
         *guard = Arc::new(Some(token));
     }
 
+    pub fn clear_token(&self) {
+        *self.token.lock().unwrap() = Arc::new(None);
+        *self.user.lock().unwrap() = None;
+    }
+
     pub fn is_token_set(&self) -> bool {
         self.token.lock().unwrap().is_some()
     }
