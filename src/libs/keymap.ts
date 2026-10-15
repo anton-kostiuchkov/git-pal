@@ -123,8 +123,8 @@ export const ModifierSymbol: Record<string, string> = {
   ctrl: "ctrl",
   shift: "⇧",
   alt: "⌥",
-  // ⊞ for windows
   cmd: "⌘",
+  super: "⊞",
 };
 
 export const MainKeySymbol: Record<string, string> = {
