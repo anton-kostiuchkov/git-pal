@@ -611,7 +611,7 @@ pub async fn view_pull_request(
 }
 
 #[tauri::command]
-pub fn show_review(
+pub async fn show_review(
     app_handle: tauri::AppHandle,
     target: Option<GetSavedReviewRequest>,
 ) -> Result<()> {

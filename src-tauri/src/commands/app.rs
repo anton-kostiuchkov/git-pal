@@ -35,7 +35,7 @@ pub fn disable_autostart(
 }
 
 #[tauri::command]
-pub fn show_palette(app_handle: tauri::AppHandle) -> Result<()> {
+pub async fn show_palette(app_handle: tauri::AppHandle) -> Result<()> {
     show_app(&app_handle)?;
     Ok(())
 }
