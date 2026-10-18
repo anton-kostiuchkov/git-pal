@@ -3,6 +3,7 @@ import {
   BookOpenText,
   CircleDot,
   CirclePlay,
+  GitMerge,
   GitPullRequestArrow,
   MessageCircleMore,
   PanelsTopLeft,
@@ -21,6 +22,7 @@ import { openUrl } from "./utils";
 
 export const REPOSITORY_PULL_REQUESTS = "page-repository-pull-requests";
 const REPOSITORY_WORKFLOWS = "page-repository-workflows";
+const REPOSITORY_MERGE_QUEUE = "page-repository-merge-queue";
 
 function useRepositoryQuery() {
   const page = useCurrentPage("repository");
@@ -34,14 +36,19 @@ function useRepositoryQuery() {
 
       const repository = item.data;
 
-      const workflows = await commands.findWorkflows({
+      const params = {
         owner: repository.owner.login,
         repository: repository.name,
-      });
+      };
+      const [workflows, mergeQueue] = await Promise.all([
+        commands.findWorkflows(params),
+        commands.findMergeQueue(params),
+      ]);
 
       return {
         repository,
         workflows,
+        mergeQueue,
       };
     },
   });
@@ -56,7 +63,7 @@ export function RepositoryPage() {
 
   if (!data) return;
 
-  const { repository, workflows } = data;
+  const { repository, workflows, mergeQueue } = data;
 
   return (
     <CommandGroup heading="Pages">
@@ -99,6 +106,27 @@ export function RepositoryPage() {
           </div>
         </Container>
       </CommandItem>
+      {mergeQueue && (
+        <CommandItem
+          value={REPOSITORY_MERGE_QUEUE}
+          onSelect={() => {
+            state.goTo({
+              to: "repository-merge-queue",
+              params: { id: repository.id },
+            });
+          }}
+        >
+          <Container>
+            <IconWrapper>
+              <GitMerge className="text-success" />
+            </IconWrapper>
+            <div>
+              Merge Queue
+              <Count value={mergeQueue.entries?.totalCount ?? 0} />
+            </div>
+          </Container>
+        </CommandItem>
+      )}
       {repository.hasIssuesEnabled && (
         <CommandItem
           value={`${repository.id}-issues`}

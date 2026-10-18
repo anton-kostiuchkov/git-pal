@@ -9,7 +9,8 @@ use git_pal_github::{
     github,
     graphql::{
         FindPullRequestResult, FindPullRequestsFilter, FindRepositoriesRequest,
-        FindRepositoriesResult, FindRepositoryPullRequestsRequest, Homepage,
+        FindRepositoriesResult, FindRepositoryPullRequestsRequest, Homepage, MergeQueue,
+        MergeQueueRequest,
     },
     mentions::{MentionableUser, MentionableUsersRequest},
     query::search_pull_request::SearchPullRequestSearchNodes::PullRequest,
@@ -76,6 +77,14 @@ pub async fn find_repository_pull_requests(
         .github_client
         .find_repository_pull_requests(params)
         .await?)
+}
+
+#[tauri::command]
+pub async fn find_merge_queue(
+    state: State<'_, AppState>,
+    params: MergeQueueRequest,
+) -> Result<Option<MergeQueue>> {
+    Ok(state.github_client.find_merge_queue(params).await?)
 }
 
 #[tauri::command]

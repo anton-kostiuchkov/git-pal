@@ -128,6 +128,7 @@ pub fn run() {
             commands::github::find_pull_requests,
             commands::github::find_repositories,
             commands::github::find_repository_pull_requests,
+            commands::github::find_merge_queue,
             commands::github::check_scope_entry,
             commands::auth::delete_token,
             commands::app::is_autostart_enabled,

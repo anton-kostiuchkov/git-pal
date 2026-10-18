@@ -177,3 +177,23 @@ query GetPullRequest($owner: String!, $name: String!, $number: Int!) {
     }
   }
 }
+
+query RepositoryMergeQueue($owner: String!, $name: String!, $count: Int!) {
+  repository(owner: $owner, name: $name) {
+    mergeQueue {
+      url
+      entries(first: $count) {
+        totalCount
+        nodes {
+          id
+          position
+          state
+          estimatedTimeToMerge
+          pullRequest {
+            ...PullRequest
+          }
+        }
+      }
+    }
+  }
+}

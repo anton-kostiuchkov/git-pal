@@ -20,6 +20,9 @@ const MAX_SEARCH_PAGE_SIZE: u32 = 100;
 
 const REPOSITORY_PULL_REQUEST_COUNT: i64 = 20;
 
+/// GitHub's largest connection page.
+const MERGE_QUEUE_ENTRY_COUNT: i64 = 100;
+
 #[derive(Debug, Clone, Serialize, Deserialize, TS, PartialEq, Eq)]
 #[ts(export, export_to = "graphql.ts")]
 #[serde(rename_all = "camelCase")]
@@ -67,6 +70,15 @@ pub struct FindRepositoryPullRequestsRequest {
     pub owner: String,
     pub repository: String,
     pub query: String,
+}
+
+pub type MergeQueue = query::repository_merge_queue::RepositoryMergeQueueRepositoryMergeQueue;
+
+#[derive(Debug, Serialize, Deserialize, Clone, TS)]
+#[ts(export, export_to = "graphql.ts")]
+pub struct MergeQueueRequest {
+    pub owner: String,
+    pub repository: String,
 }
 
 impl Client {
@@ -175,6 +187,27 @@ impl Client {
         });
 
         self.send_graphql(&q).await
+    }
+
+    /// Merge queue of the default branch, `None` when disabled.
+    pub async fn find_merge_queue(&self, params: MergeQueueRequest) -> Result<Option<MergeQueue>> {
+        let q =
+            query::RepositoryMergeQueue::build_query(query::repository_merge_queue::Variables {
+                owner: params.owner,
+                name: params.repository,
+                count: MERGE_QUEUE_ENTRY_COUNT,
+            });
+        let response: GraphQLResponse<query::repository_merge_queue::ResponseData> =
+            self.send_graphql(&q).await?;
+
+        if let Some(errors) = response.errors {
+            return Err(Error::BadRequest(errors.join(", ")));
+        }
+
+        Ok(response
+            .data
+            .and_then(|data| data.repository)
+            .and_then(|repository| repository.merge_queue))
     }
 
     /// Pull request with its checks, review decision and mergeability.

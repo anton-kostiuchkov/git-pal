@@ -70,6 +70,12 @@ type Page =
       };
     }
   | {
+      to: "repository-merge-queue";
+      params: {
+        id: string;
+      };
+    }
+  | {
       to: "repository-workflows";
       params: {
         id: string;

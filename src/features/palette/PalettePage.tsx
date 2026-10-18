@@ -28,6 +28,7 @@ import {
   PullRequestsPage,
   usePreloadPullRequestsQueries,
 } from "./PullRequestsPage";
+import { RepositoryMergeQueuePage } from "./RepositoryMergeQueuePage";
 import { RepositoryPage } from "./RepositoryPage";
 import { RepositoryPullRequestsPage } from "./RepositoryPullRequestsPage";
 import { RepositoryWorkflowsPage } from "./RepositoryWorkflowsPage";
@@ -51,6 +52,7 @@ const pages = createPageMapper({
   org: OrgPage,
   "pull-requests": PullRequestsPage,
   repository: RepositoryPage,
+  "repository-merge-queue": RepositoryMergeQueuePage,
   "repository-pull-requests": RepositoryPullRequestsPage,
   "repository-workflows": RepositoryWorkflowsPage,
   "review-template": ReviewTemplatePage,

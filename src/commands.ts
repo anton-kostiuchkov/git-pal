@@ -12,6 +12,8 @@ import type {
   FindPullRequestsFilter,
   FindRepositoryPullRequestsRequest,
   FindWorkflowsRequest,
+  MergeQueue,
+  MergeQueueRequest,
   OwnedFilesRequest,
   GetPullRequestRequest,
   JobMessagePayload,
@@ -154,6 +156,10 @@ function onThemeChanged(cb: (event: Event<ThemeChangedPayload>) => void) {
 
 function onSettingChanged(cb: (event: Event<SettingChangedPayload>) => void) {
   return listen<SettingChangedPayload>("SettingChanged", cb);
+}
+
+function findMergeQueue(params: MergeQueueRequest) {
+  return invoke<MergeQueue | null>("find_merge_queue", { params });
 }
 
 function findWorkflows(params: FindWorkflowsRequest) {
@@ -467,6 +473,7 @@ export default {
   onAppUpdated,
   onThemeChanged,
   onSettingChanged,
+  findMergeQueue,
   findWorkflows,
   findDispatchableWorkflows,
   findActiveRuns,

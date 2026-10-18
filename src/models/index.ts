@@ -2,6 +2,11 @@ export * from "./graphql";
 export type { Repository } from "./homepage";
 export * from "./rest";
 export type {
+  MergeQueueEntryState,
+  RepositoryMergeQueueRepositoryMergeQueue as MergeQueue,
+  RepositoryMergeQueueRepositoryMergeQueueEntriesNodes as MergeQueueEntry,
+} from "./repository-merge-queue";
+export type {
   PullRequest,
   PullRequestReviewDecision,
   PullRequestState,

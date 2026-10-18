@@ -9,3 +9,5 @@ export type FindRepositoryPullRequestsRequest = { owner: string, repository: str
 export type MentionableUser = { login: string, name: string | null, avatarUrl: string, };
 
 export type MentionableUsersRequest = { owner: string, repository: string, query: string, };
+
+export type MergeQueueRequest = { owner: string, repository: string, };
