@@ -20,6 +20,7 @@ import { state, useCurrentPage } from "./state";
 import { openUrl } from "./utils";
 
 export const REPOSITORY_PULL_REQUESTS = "page-repository-pull-requests";
+const REPOSITORY_WORKFLOWS = "page-repository-workflows";
 
 function useRepositoryQuery() {
   const page = useCurrentPage("repository");
@@ -178,7 +179,15 @@ export function RepositoryPage() {
         </Container>
       </CommandItem>
       {workflows.data.total_count > 0 && (
-        <CommandItem value={`${repository.id}-workflows`}>
+        <CommandItem
+          value={REPOSITORY_WORKFLOWS}
+          onSelect={() => {
+            state.goTo({
+              to: "repository-workflows",
+              params: { id: repository.id },
+            });
+          }}
+        >
           <Container>
             <IconWrapper>
               <Workflow className="text-warning" />

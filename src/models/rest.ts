@@ -9,6 +9,8 @@ export type CompareCommitsRequest = { owner: string, repository: string, base: s
  */
 export type CompareStatus = "ahead" | "behind" | "diverged" | "identical";
 
+export type DispatchableWorkflow = { workflow: Workflow, inputs: Array<WorkflowInput>, };
+
 export type DraftReviewComment = { path: string, body: string, 
 /**
  * `None` for a file level comment
@@ -51,6 +53,12 @@ commitId: string, body: string, event: ReviewEvent, comments: Array<DraftReviewC
 
 export type Workflow = { id: number, node_id: string, name: string, path: string, state: string, created_at: string, updated_at: string, url: string, html_url: string, badge_url: string, };
 
-export type WorkflowInput = { name: string | null, description: string | null, default: string | null, required: boolean | null, type: string | null, };
+export type WorkflowInput = { name: string | null, description: string | null, default: string | null, required: boolean | null, type: string | null, 
+/**
+ * Values of a `choice` input
+ */
+options: Array<string> | null, };
+
+export type WorkflowRun = { name: string | null, display_title: string, status: string | null, head_branch: string | null, html_url: string, created_at: string, };
 
 export type Workflows = { total_count: number, workflows: Array<Workflow>, };

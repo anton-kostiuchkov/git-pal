@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
 
+use futures_util::future::join_all;
 use reqwest::RequestBuilder;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -48,30 +49,132 @@ pub struct Workflows {
 pub struct WorkflowInput {
     pub name: Option<String>,
     pub description: Option<String>,
+    #[serde(default, deserialize_with = "scalar_string")]
     pub default: Option<String>,
     pub required: Option<bool>,
     #[serde(rename = "type")]
     pub input_type: Option<String>,
+    /// Values of a `choice` input
+    #[serde(default, deserialize_with = "scalar_strings")]
+    pub options: Option<Vec<String>>,
 }
 
 pub type WorkflowInputs = Vec<WorkflowInput>;
 
-type WorkflowInputName = String;
+#[derive(Debug, Serialize, Clone, TS)]
+#[ts(export, export_to = "rest.ts")]
+pub struct DispatchableWorkflow {
+    pub workflow: Workflow,
+    pub inputs: WorkflowInputs,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, TS)]
+#[ts(export, export_to = "rest.ts")]
+pub struct WorkflowRun {
+    pub name: Option<String>,
+    pub display_title: String,
+    pub status: Option<String>,
+    pub head_branch: Option<String>,
+    pub html_url: String,
+    pub created_at: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+struct WorkflowRuns {
+    workflow_runs: Vec<WorkflowRun>,
+}
+
+const ACTIVE_WORKFLOW: &str = "active";
+const DISPATCH_EVENT: &str = "workflow_dispatch";
+/// Statuses of a run not finished yet
+const ACTIVE_RUN_STATUSES: [&str; 3] = ["queued", "in_progress", "waiting"];
 
 #[derive(Debug, Deserialize)]
 struct WorkflowFile {
-    on: WorkflowFileOnField,
+    on: WorkflowEvents,
 }
 
+/// `on` holds an event name, a list of names or a map of triggers.
 #[derive(Debug, Deserialize)]
-struct WorkflowFileOnField {
-    workflow_call: Option<WorkflowTrigger>,
-    workflow_dispatch: Option<WorkflowTrigger>,
+#[serde(untagged)]
+enum WorkflowEvents {
+    Name(String),
+    Names(Vec<String>),
+    Triggers(serde_yaml::Mapping),
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Default, Deserialize)]
 struct WorkflowTrigger {
-    inputs: Option<HashMap<WorkflowInputName, WorkflowInput>>,
+    inputs: Option<serde_yaml::Mapping>,
+}
+
+impl WorkflowEvents {
+    /// `None` when the workflow can't be run manually.
+    fn dispatch_trigger(self) -> Option<WorkflowTrigger> {
+        match self {
+            WorkflowEvents::Name(name) => (name == DISPATCH_EVENT).then(WorkflowTrigger::default),
+            WorkflowEvents::Names(names) => names
+                .iter()
+                .any(|name| name == DISPATCH_EVENT)
+                .then(WorkflowTrigger::default),
+            WorkflowEvents::Triggers(mut triggers) => {
+                let trigger = triggers.remove(DISPATCH_EVENT)?;
+
+                // `workflow_dispatch:` alone is null
+                if trigger.is_null() {
+                    return Some(WorkflowTrigger::default());
+                }
+
+                serde_yaml::from_value(trigger).ok()
+            }
+        }
+    }
+}
+
+/// Keeps the YAML order, the form lists inputs like the workflow file.
+fn workflow_inputs(trigger: WorkflowTrigger) -> Result<WorkflowInputs> {
+    trigger
+        .inputs
+        .unwrap_or_default()
+        .into_iter()
+        .map(|(name, input)| {
+            let input: WorkflowInput = serde_yaml::from_value(input)
+                .map_err(|e| Error::InvalidWorkflowFile(e.to_string()))?;
+
+            Ok(WorkflowInput {
+                name: name.as_str().map(String::from),
+                ..input
+            })
+        })
+        .collect()
+}
+
+fn yaml_string(value: serde_yaml::Value) -> Option<String> {
+    match value {
+        serde_yaml::Value::String(value) => Some(value),
+        serde_yaml::Value::Bool(value) => Some(value.to_string()),
+        serde_yaml::Value::Number(value) => Some(value.to_string()),
+        _ => None,
+    }
+}
+
+/// YAML scalars like `default: false` become text, the form edits text.
+fn scalar_string<'de, D>(deserializer: D) -> std::result::Result<Option<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value = Option::<serde_yaml::Value>::deserialize(deserializer)?;
+
+    Ok(value.and_then(yaml_string))
+}
+
+fn scalar_strings<'de, D>(deserializer: D) -> std::result::Result<Option<Vec<String>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let values = Option::<Vec<serde_yaml::Value>>::deserialize(deserializer)?;
+
+    Ok(values.map(|values| values.into_iter().filter_map(yaml_string).collect()))
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -298,11 +401,87 @@ impl Client {
         &self,
         FindWorkflowsRequest { owner, repository }: FindWorkflowsRequest<'_>,
     ) -> Result<RestResponse<Workflows>> {
-        let req = self.http.get(format!(
-            "{API_URL}repos/{owner}/{repository}/actions/workflows"
-        ));
+        let req = self
+            .http
+            .get(format!(
+                "{API_URL}repos/{owner}/{repository}/actions/workflows"
+            ))
+            .query(&[("per_page", PER_PAGE)]);
 
         self.send_request(req).await
+    }
+
+    /// Active workflows with a `workflow_dispatch` trigger.
+    pub async fn find_dispatchable_workflows(
+        &self,
+        params: FindWorkflowsRequest<'_>,
+    ) -> Result<Vec<DispatchableWorkflow>> {
+        let FindWorkflowsRequest { owner, repository } = params;
+        let res = self.find_workflows(params).await?;
+        let workflows = res
+            .data
+            .workflows
+            .into_iter()
+            .filter(|workflow| workflow.state == ACTIVE_WORKFLOW);
+
+        // only the workflow file tells if it can be dispatched
+        let files = join_all(workflows.map(|workflow| async move {
+            let file = FileRequest {
+                owner,
+                repository,
+                file_path: &workflow.path,
+            };
+            let inputs = self.extract_workflow_variables(file).await;
+
+            (workflow, inputs)
+        }))
+        .await;
+
+        let mut dispatchable = Vec::new();
+
+        for (workflow, inputs) in files {
+            match inputs {
+                Ok(inputs) => dispatchable.push(DispatchableWorkflow {
+                    workflow,
+                    inputs: inputs.data,
+                }),
+                // not dispatchable, or a GitHub managed workflow without file
+                Err(Error::InvalidWorkflowFile(_) | Error::ResourceNotFound) => continue,
+                Err(e) => return Err(e),
+            }
+        }
+
+        Ok(dispatchable)
+    }
+
+    /// Runs triggered by the viewer, not finished yet.
+    pub async fn find_active_runs(
+        &self,
+        FindWorkflowsRequest { owner, repository }: FindWorkflowsRequest<'_>,
+    ) -> Result<Vec<WorkflowRun>> {
+        let actor = self.with_user(|user| user.login.clone())?;
+
+        // the endpoint filters a single status
+        let responses = join_all(ACTIVE_RUN_STATUSES.map(|status| {
+            let req = self
+                .http
+                .get(format!("{API_URL}repos/{owner}/{repository}/actions/runs"))
+                .query(&[("actor", actor.as_str()), ("status", status)]);
+
+            self.send_request::<WorkflowRuns>(req)
+        }))
+        .await;
+
+        let mut runs = Vec::new();
+
+        for res in responses {
+            runs.extend(res?.data.workflow_runs);
+        }
+
+        // newest first, the timestamps are ISO 8601
+        runs.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+
+        Ok(runs)
     }
 
     pub async fn file(&self, params: FileRequest<'_>) -> Result<RestResponse<String>> {
@@ -354,34 +533,13 @@ impl Client {
         let workflow: WorkflowFile = serde_yaml::from_str(&res.data)
             .map_err(|e| Error::InvalidWorkflowFile(e.to_string()))?;
 
-        let trigger = match workflow.on.workflow_call.or(workflow.on.workflow_dispatch) {
-            Some(trigger) => trigger,
-            None => {
-                return Err(Error::InvalidWorkflowFile(
-                    "not a workflow file".to_string(),
-                ));
-            }
-        };
-
-        let variables: Vec<WorkflowInput> = trigger
-            .inputs
-            .map(|inputs| {
-                inputs
-                    .into_iter()
-                    .map(|(name, input)| WorkflowInput {
-                        name: Some(name),
-                        description: input.description,
-                        default: input.default,
-                        required: input.required,
-                        input_type: input.input_type,
-                    })
-                    .collect()
-            })
-            .unwrap_or_default();
+        let trigger = workflow.on.dispatch_trigger().ok_or_else(|| {
+            Error::InvalidWorkflowFile(format!("{DISPATCH_EVENT} trigger missing"))
+        })?;
 
         Ok(RestResponse {
             metadata: res.metadata,
-            data: variables,
+            data: workflow_inputs(trigger)?,
         })
     }
 
@@ -433,7 +591,6 @@ impl Client {
         })
     }
 
-    /// Full description with attachments 
     pub async fn pull_request_description(
         &self,
         request: &GetPullRequestRequest,

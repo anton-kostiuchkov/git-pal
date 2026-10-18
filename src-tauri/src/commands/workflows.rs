@@ -3,7 +3,8 @@ use tauri::State;
 use crate::core::AppState;
 
 use git_pal_github::rest::{
-    FileRequest, FindWorkflowsRequest, RestResponse, RunWorkflowRequest, WorkflowInputs, Workflows,
+    DispatchableWorkflow, FileRequest, FindWorkflowsRequest, RestResponse, RunWorkflowRequest,
+    WorkflowInputs, WorkflowRun, Workflows,
 };
 
 use super::Result;
@@ -14,6 +15,29 @@ pub async fn find_workflows(
     params: FindWorkflowsRequest<'_>,
 ) -> Result<RestResponse<Workflows>> {
     let res = state.github_client.find_workflows(params).await?;
+
+    Ok(res)
+}
+
+#[tauri::command]
+pub async fn find_dispatchable_workflows(
+    state: State<'_, AppState>,
+    params: FindWorkflowsRequest<'_>,
+) -> Result<Vec<DispatchableWorkflow>> {
+    let res = state
+        .github_client
+        .find_dispatchable_workflows(params)
+        .await?;
+
+    Ok(res)
+}
+
+#[tauri::command]
+pub async fn find_active_runs(
+    state: State<'_, AppState>,
+    params: FindWorkflowsRequest<'_>,
+) -> Result<Vec<WorkflowRun>> {
+    let res = state.github_client.find_active_runs(params).await?;
 
     Ok(res)
 }

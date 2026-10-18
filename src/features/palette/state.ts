@@ -70,6 +70,12 @@ type Page =
       };
     }
   | {
+      to: "repository-workflows";
+      params: {
+        id: string;
+      };
+    }
+  | {
       to: "search";
       params: {
         owner: string;

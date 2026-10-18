@@ -138,6 +138,8 @@ pub fn run() {
             commands::auth::start_oauth_flow,
             commands::workflows::extract_workflow_variables,
             commands::workflows::find_workflows,
+            commands::workflows::find_dispatchable_workflows,
+            commands::workflows::find_active_runs,
             commands::workflows::run_workflow,
             commands::app::update_setting,
             commands::app::get_settings,

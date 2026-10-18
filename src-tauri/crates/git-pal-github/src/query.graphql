@@ -90,6 +90,9 @@ fragment Repository on Repository {
   hasProjectsEnabled
   hasWikiEnabled
   homepageUrl
+  defaultBranchRef {
+    name
+  }
   issues(states: OPEN) {
     totalCount
   }

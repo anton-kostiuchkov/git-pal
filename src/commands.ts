@@ -6,6 +6,7 @@ import type {
   AuthenticatedPayload,
   CommitComparison,
   CompareCommitsRequest,
+  DispatchableWorkflow,
   FileSourceRequest,
   FileRequest,
   FindPullRequestsFilter,
@@ -23,6 +24,7 @@ import type {
   settings,
   ThemeChangedPayload,
   WorkflowInput,
+  WorkflowRun,
   Workflows,
 } from "./models";
 import type {
@@ -156,6 +158,16 @@ function onSettingChanged(cb: (event: Event<SettingChangedPayload>) => void) {
 
 function findWorkflows(params: FindWorkflowsRequest) {
   return invoke<RestResponse<Workflows>>("find_workflows", { params });
+}
+
+function findDispatchableWorkflows(params: FindWorkflowsRequest) {
+  return invoke<DispatchableWorkflow[]>("find_dispatchable_workflows", {
+    params,
+  });
+}
+
+function findActiveRuns(params: FindWorkflowsRequest) {
+  return invoke<WorkflowRun[]>("find_active_runs", { params });
 }
 
 function extractWorkflowVariables(params: FileRequest) {
@@ -456,6 +468,8 @@ export default {
   onThemeChanged,
   onSettingChanged,
   findWorkflows,
+  findDispatchableWorkflows,
+  findActiveRuns,
   extractWorkflowVariables,
   runWorkflow,
   updateSetting,

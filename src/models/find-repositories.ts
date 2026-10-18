@@ -4,7 +4,9 @@ export type FindRepositoriesSearch = { nodes: Array<FindRepositoriesSearchNodes 
 
 export type FindRepositoriesSearchNodes = { "__typename": "App" } | { "__typename": "Discussion" } | { "__typename": "Issue" } | { "__typename": "MarketplaceListing" } | { "__typename": "Organization" } | { "__typename": "PullRequest" } | { "__typename": "Repository" } & Repository | { "__typename": "User" };
 
-export type Repository = { id: string, name: string, url: string, isPrivate: boolean, isInOrganization: boolean, stargazerCount: number, pullRequests: RepositoryPullRequests, hasIssuesEnabled: boolean, hasDiscussionsEnabled: boolean, hasProjectsEnabled: boolean, hasWikiEnabled: boolean, homepageUrl: string | null, issues: RepositoryIssues, discussions: RepositoryDiscussions, owner: RepositoryOwner, };
+export type Repository = { id: string, name: string, url: string, isPrivate: boolean, isInOrganization: boolean, stargazerCount: number, pullRequests: RepositoryPullRequests, hasIssuesEnabled: boolean, hasDiscussionsEnabled: boolean, hasProjectsEnabled: boolean, hasWikiEnabled: boolean, homepageUrl: string | null, defaultBranchRef: RepositoryDefaultBranchRef | null, issues: RepositoryIssues, discussions: RepositoryDiscussions, owner: RepositoryOwner, };
+
+export type RepositoryDefaultBranchRef = { name: string, };
 
 export type RepositoryDiscussions = { totalCount: number, };
 

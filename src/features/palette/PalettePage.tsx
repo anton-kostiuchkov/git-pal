@@ -30,6 +30,7 @@ import {
 } from "./PullRequestsPage";
 import { RepositoryPage } from "./RepositoryPage";
 import { RepositoryPullRequestsPage } from "./RepositoryPullRequestsPage";
+import { RepositoryWorkflowsPage } from "./RepositoryWorkflowsPage";
 import { ReviewTemplatePage } from "./ReviewTemplatePage";
 import { SearchPage } from "./SearchPage";
 import { usePaletteKeybindSync } from "./shortcuts";
@@ -51,6 +52,7 @@ const pages = createPageMapper({
   "pull-requests": PullRequestsPage,
   repository: RepositoryPage,
   "repository-pull-requests": RepositoryPullRequestsPage,
+  "repository-workflows": RepositoryWorkflowsPage,
   "review-template": ReviewTemplatePage,
   search: SearchPage,
 });
