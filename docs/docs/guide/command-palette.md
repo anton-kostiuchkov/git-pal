@@ -50,7 +50,17 @@ The badge on the right is GitHub's review decision: **Approved**, **Review requi
 Select a repository to browse it:
 
 - **Pull Requests**: its open pull requests, searched on GitHub as you type.
+- **Merge Queue**: the pull requests queued on the default branch, with their position, state and estimated time to merge. Shown when the repository uses a merge queue.
+- **Workflows**: run a workflow manually, see [Run a workflow](#run-a-workflow).
 - **Issues**, **Discussions**, **Project**, **Wiki**, **Actions** and **Releases**: open on GitHub.
+
+### Run a workflow
+
+The Workflows page lists the workflows with a `workflow_dispatch` trigger. Pick one, set the branch and its inputs, then **Run** opens its runs on GitHub.
+
+Your runs still queued or in progress are listed on top, wherever they were started. Select one to open it on GitHub.
+
+The workflow list is cached for 30 minutes, a new workflow can take that long to show up. Restart Git Pal to see it right away.
 
 ### Filter by author
 
