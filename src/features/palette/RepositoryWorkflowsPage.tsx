@@ -19,6 +19,8 @@ import { state, useCurrentPage } from "./state";
 import { openUrl } from "./utils";
 
 const ACTIVE_RUNS_REFRESH_MS = 10_000;
+// workflows rarely change, each fetch downloads every workflow file
+const WORKFLOWS_CACHE_MS = 30 * 60_000;
 const IN_PROGRESS = "in_progress";
 
 function useWorkflowsQueries(repository: Repository) {
@@ -32,6 +34,8 @@ function useWorkflowsQueries(repository: Repository) {
       {
         queryKey: ["dispatchable-workflows", params.owner, params.repository],
         queryFn: () => commands.findDispatchableWorkflows(params),
+        staleTime: WORKFLOWS_CACHE_MS,
+        gcTime: WORKFLOWS_CACHE_MS,
       },
       {
         queryKey: ["active-runs", params.owner, params.repository],
