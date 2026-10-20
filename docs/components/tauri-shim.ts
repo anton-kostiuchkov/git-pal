@@ -5,7 +5,7 @@ globalThis.settings = {
   theme: "dark",
   harness: "claude",
   avatar: { type: "mech", color: "#c084fc" },
-  keybind: { showPalette: "cmd+G" },
+  keybind: { showPalette: "cmd+G", palette: { help: "cmd+/" } },
 } as Settings;
 
 // IPC that never answers, event listeners register and stay silent
