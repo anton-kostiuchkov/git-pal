@@ -56,7 +56,11 @@ Select a repository to browse it:
 
 ### Run a workflow
 
+![A repository's workflows, your running ones on top](../screenshots/palette-workflows.png)
+
 The Workflows page lists the workflows with a `workflow_dispatch` trigger. Pick one, set the branch and its inputs, then **Run** opens its runs on GitHub.
+
+![Running a workflow on a branch](../screenshots/palette-workflow-run.png)
 
 Your runs still queued or in progress are listed on top, wherever they were started. Select one to open it on GitHub.
 
