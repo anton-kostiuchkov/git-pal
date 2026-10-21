@@ -11,7 +11,7 @@
   ],
   "categories": { "correctness": "warn" },
   "env": { "browser": true, "es2024": true },
-  "ignorePatterns": ["src/models", "dist", "src-tauri", "download-page"],
+  "ignorePatterns": ["src/models", "dist", "src-tauri"],
   "rules": {
     "eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }]
   }

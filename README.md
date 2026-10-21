@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="download-page/assets/logo.png" alt="Git Pal" width="128" height="128" />
+  <img src="docs/docs/public/icon.png" alt="Git Pal" width="128" height="128" />
   <h1>Git Pal</h1>
   <p><strong>GitHub in your flow, not in your way</strong></p>
   <p>A keyboard-first companion for pull requests, with AI reviews built in. Find what needs you from anywhere, let an agent review it, and submit your review without leaving the app.</p>
@@ -16,12 +16,12 @@
 
 <p align="center">
   <a href="https://fkhadra.github.io/git-pal/showreel.mp4">
-    <img src="download-page/assets/showreel.jpg" alt="Watch the Git Pal showreel" width="700" />
+    <img src="docs/docs/public/showreel-play.jpg" alt="Watch the Git Pal showreel" width="700" />
   </a>
 </p>
 
 <p align="center">
-  <img src="download-page/assets/palette-home.png" alt="Git Pal command palette" width="700" />
+  <img src="docs/docs/screenshots/palette-home.png" alt="Git Pal command palette" width="700" />
 </p>
 
 ## Features
@@ -31,13 +31,13 @@
 Press <kbd>⌘</kbd> <kbd>G</kbd> (<kbd>Ctrl</kbd> <kbd>G</kbd> on Linux, <kbd>Ctrl</kbd> <kbd>Win</kbd> <kbd>G</kbd> on Windows) from any app. Review requests, mentions, your open pull requests and repositories are one search away.
 
 <p align="center">
-  <img src="download-page/assets/palette-mentioned.png" alt="Pull requests mentioning you" width="700" />
+  <img src="docs/docs/screenshots/palette-mentioned.png" alt="Pull requests mentioning you" width="700" />
 </p>
 
 Browse a repository's pull requests and type `@` to filter by author. Every action is a shortcut away: view, review, open on GitHub or search the code.
 
 <p align="center">
-  <img src="download-page/assets/palette-author-filter.png" alt="Filtering pull requests by author" width="700" />
+  <img src="docs/docs/screenshots/palette-author-filter.png" alt="Filtering pull requests by author" width="700" />
 </p>
 
 ### AI code review
@@ -47,7 +47,7 @@ Let Claude Code, Codex, Cursor, Antigravity or OpenCode review a pull request wh
 When it's done, its comments show up right in the diff. Keep, edit or drop them, add your own notes, then submit.
 
 <p align="center">
-  <img src="download-page/assets/review-window.png" alt="The review window" width="700" />
+  <img src="docs/docs/screenshots/review-window.png" alt="The review window" width="700" />
 </p>
 
 - **Templates**: review instructions and agent skills per repository, picked automatically
@@ -56,7 +56,7 @@ When it's done, its comments show up right in the diff. Keep, edit or drop them,
 - **Open in your editor**: jump into the worktree from your IDE or terminal to tweak code or run the build
 
 <p align="center">
-  <img src="download-page/assets/review-submit.png" alt="Submitting a review" width="700" />
+  <img src="docs/docs/screenshots/review-submit.png" alt="Submitting a review" width="700" />
 </p>
 
 ### Agent chat
@@ -64,7 +64,7 @@ When it's done, its comments show up right in the diff. Keep, edit or drop them,
 Ask about the changes, the risks or a specific comment. The agent already sees the file you're on, and you can add more with `@`.
 
 <p align="center">
-  <img src="download-page/assets/review-agent-chat.png" alt="Chatting with the agent about a pull request" width="700" />
+  <img src="docs/docs/screenshots/review-agent-chat.png" alt="Chatting with the agent about a pull request" width="700" />
 </p>
 
 ### Make it yours
@@ -72,7 +72,7 @@ Ask about the changes, the risks or a specific comment. The agent already sees t
 Pick a theme and an avatar for your agent, remap any shortcut, and choose which repositories Git Pal watches.
 
 <p align="center">
-  <img src="download-page/assets/settings-appearance.png" alt="Appearance settings" width="500" />
+  <img src="docs/docs/screenshots/settings-appearance.png" alt="Appearance settings" width="500" />
 </p>
 
 ### More
