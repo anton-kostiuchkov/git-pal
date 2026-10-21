@@ -2,12 +2,14 @@ import { NoSSR, withBase } from "@rspress/core/runtime";
 import {
   Bell,
   Bot,
+  Check,
   Command,
+  Copy,
   FileCode,
   Palette,
   ShieldCheck,
 } from "lucide-react";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 
 import appIcon from "~/icon.png";
 
@@ -18,6 +20,8 @@ const DOWNLOAD_URL = "https://github.com/fkhadra/git-pal/releases/latest";
 const GUIDE_URL = "/guide/installation";
 const SHOWREEL_URL = "/showreel.mp4";
 const SHOWREEL_POSTER_URL = "/showreel-poster.jpg";
+const BREW_COMMAND = "brew install --cask fkhadra/tap/git-pal";
+const COPIED_RESET_MS = 2000;
 
 const FEATURES = [
   {
@@ -64,6 +68,42 @@ const FEATURES = [
   },
 ];
 
+// iPads report "Macintosh" too, but have a touch screen
+function isMac() {
+  return (
+    /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints === 0
+  );
+}
+
+function BrewInstall() {
+  const [copied, setCopied] = useState(false);
+
+  if (!isMac()) return null;
+
+  async function copy() {
+    await navigator.clipboard.writeText(BREW_COMMAND);
+    setCopied(true);
+    setTimeout(() => setCopied(false), COPIED_RESET_MS);
+  }
+
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-zinc-200 py-2 pr-2 pl-4 font-mono text-sm dark:border-zinc-800">
+      <code>
+        <span className="text-zinc-500 select-none">$ </span>
+        {BREW_COMMAND}
+      </code>
+      <button
+        type="button"
+        onClick={copy}
+        aria-label="Copy command"
+        className="cursor-pointer rounded-md border-0 bg-transparent p-1.5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+      >
+        {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+      </button>
+    </div>
+  );
+}
+
 function Hero() {
   return (
     <section className="flex flex-col items-center gap-6 px-6 pt-20 text-center">
@@ -92,6 +132,10 @@ function Hero() {
           Get started
         </a>
       </div>
+      {/* the platform is only known in the browser */}
+      <NoSSR>
+        <BrewInstall />
+      </NoSSR>
       <p className="text-sm text-zinc-500">macOS, Windows and Linux</p>
     </section>
   );
