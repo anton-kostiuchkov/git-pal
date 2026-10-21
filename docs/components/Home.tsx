@@ -16,6 +16,8 @@ const HeroDemo = lazy(() => import("./HeroDemo"));
 
 const DOWNLOAD_URL = "https://github.com/fkhadra/git-pal/releases/latest";
 const GUIDE_URL = "/guide/installation";
+const SHOWREEL_URL = "/showreel.mp4";
+const SHOWREEL_POSTER_URL = "/showreel-poster.jpg";
 
 const FEATURES = [
   {
@@ -116,6 +118,22 @@ function Features() {
   );
 }
 
+function Showreel() {
+  return (
+    <section className="mx-auto w-full max-w-5xl px-6">
+      <video
+        src={withBase(SHOWREEL_URL)}
+        poster={withBase(SHOWREEL_POSTER_URL)}
+        controls
+        playsInline
+        preload="none"
+        aria-label="Git Pal showreel"
+        className="aspect-video w-full rounded-xl border border-zinc-200 bg-black dark:border-zinc-800"
+      />
+    </section>
+  );
+}
+
 /** Landing page, the setup page's look and its live demo. */
 export function Home() {
   return (
@@ -129,6 +147,7 @@ export function Home() {
           </Suspense>
         </NoSSR>
       </div>
+      <Showreel />
       <Features />
     </main>
   );

@@ -15,6 +15,12 @@
 <br />
 
 <p align="center">
+  <a href="https://fkhadra.github.io/git-pal/showreel.mp4">
+    <img src="download-page/assets/showreel.jpg" alt="Watch the Git Pal showreel" width="700" />
+  </a>
+</p>
+
+<p align="center">
   <img src="download-page/assets/palette-home.png" alt="Git Pal command palette" width="700" />
 </p>
 
