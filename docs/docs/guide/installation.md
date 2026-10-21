@@ -4,6 +4,14 @@ Download the installer for your platform from the [latest release](https://githu
 
 ## macOS
 
+Install with [Homebrew](https://brew.sh):
+
+```sh
+brew install --cask fkhadra/tap/git-pal
+```
+
+Or install manually:
+
 1. Download the `.dmg`: `aarch64` for Apple Silicon, `x64` for Intel.
 2. Open it and drag Git Pal into your Applications folder.
 
