@@ -2103,7 +2103,7 @@ dependencies = [
 
 [[package]]
 name = "git-pal"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2137,7 +2137,7 @@ dependencies = [
 
 [[package]]
 name = "git-pal-agent"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2152,7 +2152,7 @@ dependencies = [
 
 [[package]]
 name = "git-pal-code-review"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2168,14 +2168,14 @@ dependencies = [
 
 [[package]]
 name = "git-pal-codegen"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "clap",
 ]
 
 [[package]]
 name = "git-pal-database"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "anyhow",
  "sqlx",
@@ -2183,7 +2183,7 @@ dependencies = [
 
 [[package]]
 name = "git-pal-github"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "anyhow",
  "futures-util",
@@ -2205,7 +2205,7 @@ dependencies = [
 
 [[package]]
 name = "git-pal-harness"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "anyhow",
  "ignore",
@@ -2218,7 +2218,7 @@ dependencies = [
 
 [[package]]
 name = "git-pal-job-runner"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "log",
  "serde",
@@ -2229,7 +2229,7 @@ dependencies = [
 
 [[package]]
 name = "git-pal-settings"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "git-pal-harness",
  "serde",
