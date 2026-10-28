@@ -80,6 +80,24 @@ function SwitchField({ control, name, label, hint }: SwitchFieldProps) {
   );
 }
 
+function toFormValues(
+  template: ReviewTemplate | undefined,
+  initialContent: string,
+): FormValues {
+  return {
+    name: template?.name ?? "",
+    matcher: template?.matcher ?? "",
+    content: template?.content ?? initialContent,
+    isDefault: template?.isDefault ?? false,
+    skills: template?.skills ?? [],
+    riskGuidelines: template?.riskGuidelines ?? "",
+    autoReview: template?.autoReview ?? false,
+    autoApprove: template?.autoApprove ?? false,
+    autoApproveMaxRisk: template?.autoApproveMaxRisk ?? "minimal",
+    requireGreenCi: template?.requireGreenCi ?? true,
+  };
+}
+
 interface Props {
   template?: ReviewTemplate;
   initialContent?: string;
@@ -94,23 +112,15 @@ export function TemplateForm({
   onDelete,
 }: Props) {
   const { mutateAsync } = useSaveTemplateMutation();
+  // switches rendered without a value turn uncontrolled and ignore the template loaded after
   const { register, control, handleSubmit, reset, setError, formState } =
-    useForm<FormValues>();
+    useForm<FormValues>({
+      defaultValues: toFormValues(template, initialContent),
+    });
   const autoApprove = useWatch({ control, name: "autoApprove" });
 
   useEffect(() => {
-    reset({
-      name: template?.name ?? "",
-      matcher: template?.matcher ?? "",
-      content: template?.content ?? initialContent,
-      isDefault: template?.isDefault ?? false,
-      skills: template?.skills ?? [],
-      riskGuidelines: template?.riskGuidelines ?? "",
-      autoReview: template?.autoReview ?? false,
-      autoApprove: template?.autoApprove ?? false,
-      autoApproveMaxRisk: template?.autoApproveMaxRisk ?? "minimal",
-      requireGreenCi: template?.requireGreenCi ?? true,
-    });
+    reset(toFormValues(template, initialContent));
   }, [template, initialContent, reset]);
 
   const onSubmit = handleSubmit(async (values) => {
