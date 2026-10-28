@@ -79,7 +79,7 @@ resolver = "3"
 members = ["crates/*"]
 
 [workspace.package]
-version = "0.0.4"
+version = "0.0.5"
 edition = "2024"
 authors = ["Fadi Khadra"]
 license = "MIT OR Apache-2.0"
