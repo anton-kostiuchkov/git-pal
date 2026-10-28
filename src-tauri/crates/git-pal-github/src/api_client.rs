@@ -198,6 +198,13 @@ pub struct RateLimit {
     pub used: u32,
 }
 
+#[derive(Debug, Serialize, Deserialize, TS)]
+#[ts(export, export_to = "api.ts")]
+pub struct RateLimits {
+    pub core: RateLimit,
+    pub graphql: RateLimit,
+}
+
 #[derive(Debug, Serialize, TS)]
 #[ts(export, export_to = "api.ts")]
 pub struct Metadata {

@@ -1,7 +1,7 @@
 use anyhow::anyhow;
-use tauri::{Manager, State, ipc::Channel};
+use tauri::{AppHandle, Manager, State, ipc::Channel};
 
-use crate::core::AppState;
+use crate::core::{AppState, Event, emit_event};
 
 use git_pal_agent::{
     models::{
@@ -67,7 +67,7 @@ pub async fn agent_send(
 
     let _ = on_event.send(AgentEvent::Started { conversation_id });
 
-    if let Err(err) = run_agent(&state, &pr, conversation_id, request, &on_event).await {
+    if let Err(err) = run_agent(&app_handle, &pr, conversation_id, request, &on_event).await {
         log::error!("Agent failed: {err}");
         let _ = on_event.send(AgentEvent::Error {
             message: err.to_string(),
@@ -78,12 +78,13 @@ pub async fn agent_send(
 }
 
 async fn run_agent(
-    state: &AppState,
+    app: &AppHandle,
     pr: &PullRequestKey,
     conversation_id: i64,
     request: SendMessageRequest,
     on_event: &Channel<AgentEvent>,
 ) -> anyhow::Result<()> {
+    let state = app.state::<AppState>().inner();
     let pr_request = GetPullRequestRequest {
         owner: pr.owner.clone(),
         repository: pr.repository.clone(),
@@ -99,10 +100,10 @@ async fn run_agent(
         .ok_or_else(|| anyhow!("Conversation not found"))?;
 
     let repositories_dir = state.repositories_dir();
-    if !git::worktree_dir(&repositories_dir, &pr.owner, &pr.repository, pr.pr_number)
+    let is_missing = !git::worktree_dir(&repositories_dir, &pr.owner, &pr.repository, pr.pr_number)
         .join(".git")
-        .exists()
-    {
+        .exists();
+    if is_missing {
         let _ = on_event.send(AgentEvent::PreparingRepository);
     }
 
@@ -116,6 +117,10 @@ async fn run_agent(
         Ok((cwd, shell::get_shell_env()?.clone()))
     })
     .await??;
+
+    if is_missing {
+        emit_event(app, Event::WorktreesChanged);
+    }
 
     let (cancel_tx, cancel_rx) = tokio::sync::oneshot::channel();
     state

@@ -1,12 +1,12 @@
 use std::{
     collections::{HashMap, HashSet},
-    path::PathBuf,
     sync::Mutex,
     time::Duration,
 };
 
 use anyhow::anyhow;
 use tauri::{AppHandle, Manager, State};
+use tokio::task::JoinHandle;
 
 use crate::{
     core::{AppState, Event, emit_event, notification},
@@ -168,11 +168,13 @@ pub async fn review_pull_request(
                 let repository = repository.clone();
 
                 let scope = since.clone();
+                let handle = app.clone();
                 let review =
                     tokio::task::spawn_blocking(move || -> anyhow::Result<PullRequestReview> {
                         let env_vars = shell::get_shell_env()?;
                         let worktree_dir =
                             git::prepare_worktree(&repositories_dir, &owner, &repository, pr_number)?;
+                        emit_event(&handle, Event::WorktreesChanged);
 
                         if let Some(since) = &scope
                             && !git::is_ancestor(&worktree_dir, since)?
@@ -653,12 +655,15 @@ async fn remove_reviews(
             .await?;
     }
 
-    remove_worktrees(state.repositories_dir(), prs.clone());
+    remove_worktrees(app, prs.clone());
 
     Ok(prs)
 }
 
-fn remove_worktrees(repositories_dir: PathBuf, prs: Vec<GetSavedReviewRequest>) {
+fn remove_worktrees(app: &AppHandle, prs: Vec<GetSavedReviewRequest>) -> JoinHandle<()> {
+    let repositories_dir = app.state::<AppState>().repositories_dir();
+    let app = app.clone();
+
     tokio::task::spawn_blocking(move || {
         let _removing = WORKTREE_REMOVAL
             .lock()
@@ -673,7 +678,9 @@ fn remove_worktrees(repositories_dir: PathBuf, prs: Vec<GetSavedReviewRequest>) 
                 log::error!("Failed to remove {}: {e}", worktree_dir.display());
             }
         }
-    });
+
+        emit_event(&app, Event::WorktreesChanged);
+    })
 }
 
 const CLEANUP_JOB: &str = "review_cleanup";
@@ -709,6 +716,38 @@ async fn clean_up_reviews(app: &AppHandle) -> anyhow::Result<()> {
         return Ok(());
     }
 
+    let finished = finished_reviews(app).await?;
+    if finished.is_empty() {
+        return Ok(());
+    }
+
+    if cleanup == ReviewCleanup::Worktree {
+        remove_finished_worktrees(app, finished);
+        return Ok(());
+    }
+
+    let ids: Vec<i64> = finished.iter().map(|r| r.id).collect();
+    let prs = remove_reviews(app, &state, &ids).await?;
+    emit_event(app, Event::ReviewsDeleted(prs));
+
+    Ok(())
+}
+
+/// Removes the worktrees of merged or closed pull requests, whatever the cleanup setting.
+#[tauri::command]
+pub async fn clean_up_worktrees(app: AppHandle) -> Result<()> {
+    let finished = finished_reviews(&app).await?;
+    remove_finished_worktrees(&app, finished)
+        .await
+        .map_err(anyhow::Error::from)?;
+
+    Ok(())
+}
+
+/// Reviews of merged or closed pull requests, skipping those a review or an agent works on.
+async fn finished_reviews(app: &AppHandle) -> anyhow::Result<Vec<ReviewListEntry>> {
+    let state = app.state::<AppState>();
+
     let mut finished = vec![];
     for review in state.code_review_store.list_reviews().await? {
         match is_finished(app, &review).await {
@@ -723,33 +762,24 @@ async fn clean_up_reviews(app: &AppHandle) -> anyhow::Result<()> {
         }
     }
 
-    if finished.is_empty() {
-        return Ok(());
-    }
+    Ok(finished)
+}
 
-    if cleanup == ReviewCleanup::Worktree {
-        let repositories_dir = state.repositories_dir();
-        let prs = finished
-            .into_iter()
-            .filter(|r| {
-                git::worktree_dir(&repositories_dir, &r.owner, &r.repository, r.pr_number).exists()
-            })
-            .map(|r| GetSavedReviewRequest {
-                owner: r.owner,
-                repository: r.repository,
-                pr_number: r.pr_number,
-            })
-            .collect();
-        remove_worktrees(repositories_dir, prs);
+fn remove_finished_worktrees(app: &AppHandle, finished: Vec<ReviewListEntry>) -> JoinHandle<()> {
+    let repositories_dir = app.state::<AppState>().repositories_dir();
+    let prs = finished
+        .into_iter()
+        .filter(|r| {
+            git::worktree_dir(&repositories_dir, &r.owner, &r.repository, r.pr_number).exists()
+        })
+        .map(|r| GetSavedReviewRequest {
+            owner: r.owner,
+            repository: r.repository,
+            pr_number: r.pr_number,
+        })
+        .collect();
 
-        return Ok(());
-    }
-
-    let ids: Vec<i64> = finished.iter().map(|r| r.id).collect();
-    let prs = remove_reviews(app, &state, &ids).await?;
-    emit_event(app, Event::ReviewsDeleted(prs));
-
-    Ok(())
+    remove_worktrees(app, prs)
 }
 
 fn is_merged_or_closed(state: Option<PullRequestState>) -> bool {

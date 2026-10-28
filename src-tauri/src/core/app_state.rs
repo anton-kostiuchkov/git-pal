@@ -363,6 +363,7 @@ pub enum Event {
     JobMessage(Job),
     ReviewSelected(GetSavedReviewRequest),
     ReviewsDeleted(Vec<GetSavedReviewRequest>),
+    WorktreesChanged,
 }
 
 pub fn emit_event(handle: &AppHandle, event: Event) {
@@ -374,6 +375,7 @@ pub fn emit_event(handle: &AppHandle, event: Event) {
         Event::JobMessage(_) => "JobMessage",
         Event::ReviewSelected(_) => "ReviewSelected",
         Event::ReviewsDeleted(_) => "ReviewsDeleted",
+        Event::WorktreesChanged => "WorktreesChanged",
     };
 
     handle

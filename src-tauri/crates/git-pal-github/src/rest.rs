@@ -11,7 +11,7 @@ use url::Url;
 use crate::api_client::{Client, Error, Response, Result};
 use crate::attachments::sign_attachments;
 use crate::conversation::truncate;
-use crate::github::Metadata;
+use crate::github::{Metadata, RateLimits};
 
 pub(crate) const API_URL: &str = "https://api.github.com/";
 
@@ -317,6 +317,11 @@ struct CompareResponse {
     ahead_by: i64,
 }
 
+#[derive(Debug, Deserialize)]
+struct RateLimitResponse {
+    resources: RateLimits,
+}
+
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "rest.ts")]
@@ -605,6 +610,14 @@ impl Client {
         let html = pr.body_html.unwrap_or_default();
 
         Ok(pr.body.map(|body| sign_attachments(&body, &html)))
+    }
+
+    pub async fn rate_limits(&self) -> Result<RateLimits> {
+        let req = self.http.get(format!("{API_URL}rate_limit"));
+        let Response { response, .. } = self.do_request(req).await?;
+        let body: RateLimitResponse = response.json().await?;
+
+        Ok(body.resources)
     }
 
     pub async fn compare_commits(

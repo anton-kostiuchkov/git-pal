@@ -6,6 +6,8 @@ export type Metadata = { rate_limit: RateLimit, token_expiration: string | null,
 
 export type RateLimit = { limit: number, remaining: number, reset: number, used: number, };
 
+export type RateLimits = { core: RateLimit, graphql: RateLimit, };
+
 export type RestResponse<T> = { metadata: Metadata, data: T, };
 
 export type Token = { value: string, expire_at: string | null, };

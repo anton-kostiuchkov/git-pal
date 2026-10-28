@@ -37,7 +37,12 @@ import type {
   PullRequestKey,
   SendMessageRequest,
 } from "./models/agent";
-import type { GraphQLResponse, RestResponse, Token } from "./models/api";
+import type {
+  GraphQLResponse,
+  RateLimits,
+  RestResponse,
+  Token,
+} from "./models/api";
 import type {
   CodeReview,
   GetSavedReviewRequest,
@@ -65,8 +70,8 @@ import type {
 import type { Harness, Model, Skill } from "./models/harness";
 import type { ResponseData as HomepageResponse } from "./models/homepage";
 import type { Job } from "./models/jobs";
-import type { ResponseData as SearchPullRequestsResponse } from "./models/search-pull-request";
 import type { EntryKind } from "./models/scope";
+import type { ResponseData as SearchPullRequestsResponse } from "./models/search-pull-request";
 import { AppUpdate } from "./models/updater";
 import type {
   UserProfile,
@@ -117,6 +122,10 @@ function findRepositories(params: FindRepositoriesRequest) {
 /** Rejects with a message naming the unknown owner or repository. */
 function checkScopeEntry(entry: string) {
   return invoke<EntryKind>("check_scope_entry", { entry });
+}
+
+function rateLimits() {
+  return invoke<RateLimits>("rate_limits");
 }
 
 function isAutoStartEnabled() {
@@ -299,6 +308,18 @@ function worktreePath(request: GetSavedReviewRequest) {
   return invoke<string>("worktree_path", { request });
 }
 
+function worktreesSize() {
+  return invoke<number>("worktrees_size");
+}
+
+function cleanUpWorktrees() {
+  return invoke<void>("clean_up_worktrees");
+}
+
+function openRepositoriesDir() {
+  return invoke<void>("open_repositories_dir");
+}
+
 function listEditors() {
   return invoke<string[]>("list_editors");
 }
@@ -447,6 +468,10 @@ function onReviewsDeleted(cb: (event: Event<ReviewsDeletedPayload>) => void) {
   return listen<ReviewsDeletedPayload>("ReviewsDeleted", cb);
 }
 
+function onWorktreesChanged(cb: () => void) {
+  return listen("WorktreesChanged", cb);
+}
+
 function useOnAuthMessage(cb: Parameters<typeof onAuthMessage>[0]) {
   const handler = useEffectEvent(cb);
 
@@ -468,6 +493,7 @@ export default {
   findRepositories,
   findRepositoryPullRequests,
   checkScopeEntry,
+  rateLimits,
   isAutoStartEnabled,
   enableAutoStart,
   disableAutoStart,
@@ -511,6 +537,9 @@ export default {
   updateReviewComments,
   deleteReviews,
   worktreePath,
+  worktreesSize,
+  cleanUpWorktrees,
+  openRepositoriesDir,
   listEditors,
   openInEditor,
   listViewedFiles,
@@ -535,6 +564,7 @@ export default {
   onJobMessage,
   onReviewSelected,
   onReviewsDeleted,
+  onWorktreesChanged,
   agentSend,
   agentCancel,
   listModels,

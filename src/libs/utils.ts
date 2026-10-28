@@ -28,3 +28,18 @@ const NON_DIGITS = /\D/g;
 export function digitsOnly(value: string) {
   return value.replace(NON_DIGITS, "");
 }
+
+const BYTES_PER_UNIT = 1024;
+const SIZE_UNITS = ["B", "KB", "MB", "GB", "TB"];
+
+/** e.g. "31.4 MB" */
+export function formatBytes(bytes: number) {
+  let value = bytes;
+  let unit = 0;
+  while (value >= BYTES_PER_UNIT && unit < SIZE_UNITS.length - 1) {
+    value /= BYTES_PER_UNIT;
+    unit++;
+  }
+
+  return `${value.toFixed(unit === 0 ? 0 : 1)} ${SIZE_UNITS[unit]}`;
+}

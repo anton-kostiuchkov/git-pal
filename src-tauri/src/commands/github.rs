@@ -266,3 +266,8 @@ pub async fn get_file_source(
 ) -> Result<String> {
     Ok(state.github_client.file_source(&request).await?)
 }
+
+#[tauri::command]
+pub async fn rate_limits(state: State<'_, AppState>) -> Result<github::RateLimits> {
+    Ok(state.github_client.rate_limits().await?)
+}

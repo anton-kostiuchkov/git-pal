@@ -24,7 +24,7 @@ import type {
 
 const LEVELS: RiskLevel[] = ["minimal", "low", "medium", "high"];
 
-const LEVEL_LABELS: Record<RiskLevel, string> = {
+export const LEVEL_LABELS: Record<RiskLevel, string> = {
   minimal: "Minimal",
   low: "Low",
   medium: "Medium",

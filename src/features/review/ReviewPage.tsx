@@ -73,6 +73,7 @@ import { ReviewUpdateBanner } from "./ReviewUpdateBanner";
 import { RiskBadge } from "./RiskBadge";
 import { matchShortcut, useKeybind, useKeybindSync } from "./shortcuts";
 import { ShortcutsDialog } from "./ShortcutsDialog";
+import { StatusBar } from "./StatusBar";
 import { fileDraftKey, fileScope, store, useCodeReviewSnapshot } from "./store";
 import { useAgentEvent } from "./useAgentEvent";
 import { useRefreshPullRequest } from "./useRefreshPullRequest";
@@ -753,6 +754,7 @@ export function ReviewPage() {
         </ResizablePanel>
       </ResizablePanelGroup>
 
+      <StatusBar />
       <ShortcutsDialog open={showShortcuts} onOpenChange={setShowShortcuts} />
       <TemplateManager />
     </div>

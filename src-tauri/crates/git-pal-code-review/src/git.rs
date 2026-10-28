@@ -219,6 +219,48 @@ pub fn remove_worktree(bare_dir: &Path, worktree_dir: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Bytes taken by every pull request worktree, bare clones excluded.
+pub fn worktrees_size(repositories_dir: &Path) -> u64 {
+    let Ok(owners) = fs::read_dir(repositories_dir) else {
+        return 0;
+    };
+
+    let mut size = 0;
+    for owner in owners.flatten() {
+        let Ok(repos) = fs::read_dir(owner.path()) else {
+            continue;
+        };
+
+        for repo in repos.flatten() {
+            let path = repo.path();
+            // `{repo}.git` is the bare clone, `{repo}/{pr}` the worktrees
+            if path.extension().is_some_and(|ext| ext == "git") {
+                continue;
+            }
+
+            size += dir_size(&path);
+        }
+    }
+
+    size
+}
+
+fn dir_size(path: &Path) -> u64 {
+    let Ok(entries) = fs::read_dir(path) else {
+        return 0;
+    };
+
+    // symlinks aren't followed
+    entries
+        .flatten()
+        .map(|entry| match entry.metadata() {
+            Ok(meta) if meta.is_dir() => dir_size(&entry.path()),
+            Ok(meta) => meta.len(),
+            Err(_) => 0,
+        })
+        .sum()
+}
+
 /// Whether the repository's bare clone exists, otherwise the next diff or review clones it.
 pub fn is_cloned(repositories_dir: &Path, owner: &str, repo: &str) -> bool {
     bare_dir(repositories_dir, owner, repo)
