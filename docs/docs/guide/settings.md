@@ -17,6 +17,10 @@ Used by reviews and new chats.
 - **Harness**: Claude Code, Codex, Cursor, Antigravity or OpenCode. See [installation](./installation#ai-reviews).
 - **Model**: the models your harness offers, marked **(default)** for the harness's own default. Saved per harness.
 
+### Reviews
+
+- **Cleanup**: what to remove once a reviewed pull request is merged or closed, checked every 30 minutes. **Everything** by default: the worktree, the review and its agent conversations. **Worktree only** keeps the review listed. **Off** keeps both.
+
 ### Notifications
 
 - **Review requests**: notify me when my review is requested.
