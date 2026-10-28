@@ -1,13 +1,15 @@
 use std::{
     collections::{HashMap, HashSet},
+    path::PathBuf,
     sync::Mutex,
+    time::Duration,
 };
 
 use anyhow::anyhow;
 use tauri::{AppHandle, Manager, State};
 
 use crate::{
-    core::{AppState, notification},
+    core::{AppState, Event, emit_event, notification},
     window::{self, ReviewActivity},
 };
 
@@ -29,9 +31,10 @@ use git_pal_github::{
 };
 use git_pal_harness::{Harness, shell};
 use git_pal_job_runner::{Job, JobKind, JobStatus};
+use git_pal_settings::ReviewCleanup;
 
 use super::Result;
-use super::github::discussion_summary;
+use super::github::{discussion_summary, review_state};
 
 /// Starts a review job in the background and returns its id.
 #[tauri::command]
@@ -625,8 +628,19 @@ pub async fn delete_reviews(
     state: State<'_, AppState>,
     ids: Vec<i64>,
 ) -> Result<()> {
-    let prs = state.code_review_store.delete_reviews(&ids).await?;
-    refresh_review_badge(&app);
+    remove_reviews(&app, &state, &ids).await?;
+
+    Ok(())
+}
+
+/// Deletes the reviews, their agent conversations and worktrees, returns the deleted pull requests.
+async fn remove_reviews(
+    app: &AppHandle,
+    state: &AppState,
+    ids: &[i64],
+) -> anyhow::Result<Vec<GetSavedReviewRequest>> {
+    let prs = state.code_review_store.delete_reviews(ids).await?;
+    refresh_review_badge(app);
 
     for pr in &prs {
         state
@@ -639,7 +653,12 @@ pub async fn delete_reviews(
             .await?;
     }
 
-    let repositories_dir = state.repositories_dir();
+    remove_worktrees(state.repositories_dir(), prs.clone());
+
+    Ok(prs)
+}
+
+fn remove_worktrees(repositories_dir: PathBuf, prs: Vec<GetSavedReviewRequest>) {
     tokio::task::spawn_blocking(move || {
         let _removing = WORKTREE_REMOVAL
             .lock()
@@ -655,8 +674,142 @@ pub async fn delete_reviews(
             }
         }
     });
+}
+
+const CLEANUP_JOB: &str = "review_cleanup";
+const CLEANUP_INTERVAL: Duration = Duration::from_mins(30);
+
+pub(crate) fn start_review_cleanup(app: &AppHandle) {
+    let app = app.clone();
+
+    // the runner spawns on tokio, the app setup runs outside of it
+    tauri::async_runtime::spawn(async move {
+        let handle = app.clone();
+
+        app.state::<AppState>().job_runner.start_job(
+            CLEANUP_JOB.to_string(),
+            CLEANUP_INTERVAL,
+            move || {
+                let app = handle.clone();
+                async move {
+                    if let Err(e) = clean_up_reviews(&app).await {
+                        log::error!("Review cleanup failed: {e}");
+                    }
+                }
+            },
+        );
+    });
+}
+
+/// Removes what the setting asks for once a pull request is merged or closed.
+async fn clean_up_reviews(app: &AppHandle) -> anyhow::Result<()> {
+    let state = app.state::<AppState>();
+    let cleanup = state.get_settings().review_cleanup;
+    if cleanup == ReviewCleanup::Off {
+        return Ok(());
+    }
+
+    let mut finished = vec![];
+    for review in state.code_review_store.list_reviews().await? {
+        match is_finished(app, &review).await {
+            Ok(true) if !is_in_use(&state, &review).await? => finished.push(review),
+            Ok(_) => {}
+            Err(e) => log::warn!(
+                "Unable to fetch the state of {}/{}#{}: {e}",
+                review.owner,
+                review.repository,
+                review.pr_number
+            ),
+        }
+    }
+
+    if finished.is_empty() {
+        return Ok(());
+    }
+
+    if cleanup == ReviewCleanup::Worktree {
+        let repositories_dir = state.repositories_dir();
+        let prs = finished
+            .into_iter()
+            .filter(|r| {
+                git::worktree_dir(&repositories_dir, &r.owner, &r.repository, r.pr_number).exists()
+            })
+            .map(|r| GetSavedReviewRequest {
+                owner: r.owner,
+                repository: r.repository,
+                pr_number: r.pr_number,
+            })
+            .collect();
+        remove_worktrees(repositories_dir, prs);
+
+        return Ok(());
+    }
+
+    let ids: Vec<i64> = finished.iter().map(|r| r.id).collect();
+    let prs = remove_reviews(app, &state, &ids).await?;
+    emit_event(app, Event::ReviewsDeleted(prs));
 
     Ok(())
+}
+
+fn is_merged_or_closed(state: Option<PullRequestState>) -> bool {
+    matches!(
+        state,
+        Some(PullRequestState::Merged | PullRequestState::Closed)
+    )
+}
+
+/// Whether the pull request is merged or closed, asks GitHub unless already known.
+async fn is_finished(app: &AppHandle, review: &ReviewListEntry) -> anyhow::Result<bool> {
+    if is_merged_or_closed(review.pr_state) {
+        return Ok(true);
+    }
+
+    let state = app.state::<AppState>();
+    let request = GetPullRequestRequest {
+        owner: review.owner.clone(),
+        repository: review.repository.clone(),
+        number: review.pr_number,
+    };
+    let pr = state.github_client.find_pull_request(&request).await?;
+    let Some(pr_state) = review_state(&pr.state) else {
+        return Ok(false);
+    };
+
+    if state
+        .code_review_store
+        .set_pr_state(
+            &review.owner,
+            &review.repository,
+            review.pr_number,
+            pr_state,
+        )
+        .await?
+    {
+        refresh_review_badge(app);
+    }
+
+    Ok(is_merged_or_closed(Some(pr_state)))
+}
+
+/// Whether a review or an agent is running in the pull request's worktree.
+async fn is_in_use(state: &AppState, review: &ReviewListEntry) -> anyhow::Result<bool> {
+    let job_id = review_job_id(&review.owner, &review.repository, review.pr_number);
+    if let Some(JobStatus::Running | JobStatus::Queued) = state.job_runner.status(&job_id) {
+        return Ok(true);
+    }
+
+    let conversations = state
+        .agent_store
+        .list_conversations(&PullRequestKey {
+            owner: review.owner.clone(),
+            repository: review.repository.clone(),
+            pr_number: review.pr_number,
+        })
+        .await?;
+    let runs = state.agent_runs.lock().unwrap();
+
+    Ok(conversations.iter().any(|c| runs.contains_key(&c.id)))
 }
 
 // serializes the counts, a stale one can't land last

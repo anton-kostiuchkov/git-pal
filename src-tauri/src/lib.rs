@@ -11,7 +11,7 @@ use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_log::{Target, TargetKind};
 
-use commands::review::refresh_review_badge;
+use commands::review::{refresh_review_badge, start_review_cleanup};
 use git_pal_job_runner::JobKind;
 use window::{
     RUNNING_MENU_ID, ReviewActivity, TRAY_ICON, TRAY_ID, WAITING_MENU_ID, on_app_start, show_app,
@@ -118,6 +118,7 @@ pub fn run() {
                 .build(app)?;
 
             refresh_review_badge(app.handle());
+            start_review_cleanup(app.handle());
 
             Ok(())
         })

@@ -362,6 +362,7 @@ pub enum Event {
     UpdateDownloaded(AppUpdate),
     JobMessage(Job),
     ReviewSelected(GetSavedReviewRequest),
+    ReviewsDeleted(Vec<GetSavedReviewRequest>),
 }
 
 pub fn emit_event(handle: &AppHandle, event: Event) {
@@ -372,6 +373,7 @@ pub fn emit_event(handle: &AppHandle, event: Event) {
         Event::UpdateDownloaded(_) => "UpdateDownloaded",
         Event::JobMessage(_) => "JobMessage",
         Event::ReviewSelected(_) => "ReviewSelected",
+        Event::ReviewsDeleted(_) => "ReviewsDeleted",
     };
 
     handle

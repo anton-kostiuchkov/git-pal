@@ -43,12 +43,27 @@ pub struct Settings {
     pub repository_filter: RepositoryFilter,
     #[serde(default = "default_pull_request_limit")]
     pub pull_request_limit: u32,
+    #[serde(default)]
+    pub review_cleanup: ReviewCleanup,
 }
 
 const DEFAULT_PULL_REQUEST_LIMIT: u32 = 30;
 
 fn default_pull_request_limit() -> u32 {
     DEFAULT_PULL_REQUEST_LIMIT
+}
+
+/// What is removed once a reviewed pull request is merged or closed
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, Eq, TS)]
+#[ts(export, export_to = "settings.ts")]
+#[serde(rename_all = "camelCase")]
+pub enum ReviewCleanup {
+    Off,
+    /// The worktree, the review stays listed
+    Worktree,
+    /// The worktree, the review and its agent conversations
+    #[default]
+    Everything,
 }
 
 /// Repositories the pull request lists, notifications and repository searches cover.
@@ -269,6 +284,7 @@ impl Default for Settings {
             avatar: Avatar::default(),
             repository_filter: RepositoryFilter::default(),
             pull_request_limit: DEFAULT_PULL_REQUEST_LIMIT,
+            review_cleanup: ReviewCleanup::default(),
         }
     }
 }
@@ -288,6 +304,7 @@ pub enum SettingValue {
     Avatar(Avatar),
     RepositoryFilter(RepositoryFilter),
     PullRequestLimit(u32),
+    ReviewCleanup(ReviewCleanup),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -304,6 +321,7 @@ pub enum SettingKey {
     Avatar,
     RepositoryFilter,
     PullRequestLimit,
+    ReviewCleanup,
 }
 
 pub struct SettingManager {
@@ -358,6 +376,7 @@ impl SettingManager {
             SettingKey::PullRequestLimit => {
                 SettingValue::PullRequestLimit(self.settings.pull_request_limit)
             }
+            SettingKey::ReviewCleanup => SettingValue::ReviewCleanup(self.settings.review_cleanup),
         }
     }
 
@@ -374,6 +393,7 @@ impl SettingManager {
             SettingValue::Avatar(val) => self.settings.avatar = val,
             SettingValue::RepositoryFilter(val) => self.settings.repository_filter = val,
             SettingValue::PullRequestLimit(val) => self.settings.pull_request_limit = val,
+            SettingValue::ReviewCleanup(val) => self.settings.review_cleanup = val,
         }
     }
 

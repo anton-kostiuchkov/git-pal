@@ -40,4 +40,9 @@ export type ReviewSelectedPayload = Extract<
   { reviewSelected: unknown }
 >;
 
+export type ReviewsDeletedPayload = Extract<
+  events.Event,
+  { reviewsDeleted: unknown }
+>;
+
 export type CommentContext = Extract<ContextItem, { type: "comment" }>;

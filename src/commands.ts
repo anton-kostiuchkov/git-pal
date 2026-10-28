@@ -20,6 +20,7 @@ import type {
   PullRequestDetails,
   PullRequestDiff,
   ReviewSelectedPayload,
+  ReviewsDeletedPayload,
   RunWorkflowRequest,
   SettingChangedPayload,
   SubmitReviewRequest,
@@ -442,6 +443,10 @@ function onReviewSelected(cb: (event: Event<ReviewSelectedPayload>) => void) {
   return listen<ReviewSelectedPayload>("ReviewSelected", cb);
 }
 
+function onReviewsDeleted(cb: (event: Event<ReviewsDeletedPayload>) => void) {
+  return listen<ReviewsDeletedPayload>("ReviewsDeleted", cb);
+}
+
 function useOnAuthMessage(cb: Parameters<typeof onAuthMessage>[0]) {
   const handler = useEffectEvent(cb);
 
@@ -529,6 +534,7 @@ export default {
   cancelReview,
   onJobMessage,
   onReviewSelected,
+  onReviewsDeleted,
   agentSend,
   agentCancel,
   listModels,

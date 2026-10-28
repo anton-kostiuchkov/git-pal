@@ -184,7 +184,9 @@ pub async fn get_pull_request_status(
     Ok(pr)
 }
 
-fn review_state(state: &query::get_pull_request::PullRequestState) -> Option<PullRequestState> {
+pub(crate) fn review_state(
+    state: &query::get_pull_request::PullRequestState,
+) -> Option<PullRequestState> {
     use query::get_pull_request::PullRequestState as GithubState;
 
     match state {

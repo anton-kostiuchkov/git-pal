@@ -26,9 +26,16 @@ export function useAgentEvent() {
       queryClient.invalidateQueries({ queryKey: ["saved-reviews"] });
     });
 
+    // merged or closed pull requests cleaned up in the background
+    const unlistenDeletion = commands.onReviewsDeleted(({ payload }) => {
+      payload.reviewsDeleted.forEach(store.clearReview);
+      queryClient.invalidateQueries({ queryKey: ["saved-reviews"] });
+    });
+
     return () => {
       unlistenJobs.then((fn) => fn());
       unlistenSelection.then((fn) => fn());
+      unlistenDeletion.then((fn) => fn());
     };
   }, [queryClient]);
 }

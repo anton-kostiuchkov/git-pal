@@ -6,6 +6,7 @@ import commands from "~/commands";
 import { AgentSection } from "./AgentSection";
 import { AutoStart } from "./AutoStart";
 import { MonitoringSection } from "./MonitoringSection";
+import { ReviewsSection } from "./ReviewsSection";
 import { Section } from "./Section";
 
 export function GeneralSection() {
@@ -19,6 +20,7 @@ export function GeneralSection() {
         <AutoStart autoStartEnabled={autoStartEnabled} />
       </Section>
       <AgentSection />
+      <ReviewsSection />
       <MonitoringSection />
     </>
   );
