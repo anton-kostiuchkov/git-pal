@@ -2,6 +2,7 @@ import { cn } from "cn";
 import { X } from "lucide-react";
 
 import { Spinner } from "~/components/spinner";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
   Combobox,
@@ -48,11 +49,12 @@ export function SkillsField({ value, onChange }: Props) {
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {value.map((name) => (
-        <span
+        <Badge
           key={name}
+          variant="outline"
           title={isMissing(name) ? "Not installed, reviews skip it" : undefined}
           className={cn(
-            "flex items-center gap-1 rounded-md border px-2 py-0.5 font-mono text-xs",
+            "font-mono",
             isMissing(name) && "border-warning text-warning",
           )}
         >
@@ -65,7 +67,7 @@ export function SkillsField({ value, onChange }: Props) {
           >
             <X className="size-3" />
           </button>
-        </span>
+        </Badge>
       ))}
 
       <Combobox
