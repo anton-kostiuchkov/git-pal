@@ -19,7 +19,7 @@ Used by reviews and new chats.
 
 ### Reviews
 
-- **Cleanup**: what to remove once a reviewed pull request is merged or closed, checked every 30 minutes. **Everything** by default: the worktree, the review and its agent conversations. **Worktree only** keeps the review listed. **Off** keeps both.
+- **Cleanup**: what to remove once a reviewed pull request is merged or closed, checked every 30 minutes. **Everything** by default: the worktree, the review and its agent conversations. **Worktree only** keeps the review listed. **Off** keeps both. Unless off, worktrees left without a review are removed too.
 
 ### Notifications
 
