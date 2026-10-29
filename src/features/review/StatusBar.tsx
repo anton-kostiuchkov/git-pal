@@ -35,6 +35,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import { Progress } from "~/components/ui/progress";
 import {
   Tooltip,
   TooltipContent,
@@ -230,6 +231,7 @@ function RateLimitItem() {
     { label: "REST", quota: data.core },
   ];
   const highest = Math.max(...quotas.map(({ quota }) => usageRatio(quota)));
+  const percent = Math.round(highest * 100);
 
   return (
     <Tooltip>
@@ -237,13 +239,18 @@ function RateLimitItem() {
         render={
           <span
             className={cn(
-              "px-1.5 text-muted-foreground",
+              "flex items-center gap-1.5 px-1.5 text-muted-foreground",
               highest > HIGH_USAGE_RATIO && "text-warning",
             )}
           />
         }
       >
-        API Quota {Math.round(highest * 100)}%
+        API Quota {percent}%
+        {/* filled with the text color, warning included */}
+        <Progress
+          value={percent}
+          className="w-12 **:data-[slot=progress-indicator]:bg-current"
+        />
       </TooltipTrigger>
       <TooltipContent className="flex flex-col">
         {quotas.map(({ label, quota }) => (
