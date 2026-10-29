@@ -5,6 +5,8 @@ use std::sync::Mutex;
 
 use anyhow::{Result, anyhow, bail};
 
+use crate::models::GetSavedReviewRequest;
+
 /// Reviews and the agent share a worktree, concurrent preparation would race.
 static PREPARE_LOCK: Mutex<()> = Mutex::new(());
 
@@ -243,6 +245,45 @@ pub fn worktrees_size(repositories_dir: &Path) -> u64 {
     }
 
     size
+}
+
+/// Pull requests with a worktree on disk, `{owner}/{repo}/{pr}`.
+pub fn list_worktrees(repositories_dir: &Path) -> Vec<GetSavedReviewRequest> {
+    let Ok(owners) = fs::read_dir(repositories_dir) else {
+        return vec![];
+    };
+
+    let mut worktrees = vec![];
+    for owner in owners.flatten() {
+        let Ok(repos) = fs::read_dir(owner.path()) else {
+            continue;
+        };
+
+        for repo in repos.flatten() {
+            let path = repo.path();
+            if path.extension().is_some_and(|ext| ext == "git") {
+                continue;
+            }
+
+            let Ok(prs) = fs::read_dir(&path) else {
+                continue;
+            };
+
+            for pr in prs.flatten() {
+                let Some(pr_number) = pr.file_name().to_str().and_then(|n| n.parse().ok()) else {
+                    continue;
+                };
+
+                worktrees.push(GetSavedReviewRequest {
+                    owner: owner.file_name().to_string_lossy().into_owned(),
+                    repository: repo.file_name().to_string_lossy().into_owned(),
+                    pr_number,
+                });
+            }
+        }
+    }
+
+    worktrees
 }
 
 fn dir_size(path: &Path) -> u64 {

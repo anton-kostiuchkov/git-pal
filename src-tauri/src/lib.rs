@@ -190,6 +190,7 @@ pub fn run() {
             commands::templates::resolve_review_template,
             commands::review::list_jobs,
             commands::review::clean_up_worktrees,
+            commands::review::is_cleaning_worktrees,
             commands::review::cancel_review,
             commands::review::show_review,
             commands::review::view_pull_request,

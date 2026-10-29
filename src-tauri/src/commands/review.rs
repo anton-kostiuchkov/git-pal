@@ -1,6 +1,9 @@
 use std::{
     collections::{HashMap, HashSet},
-    sync::Mutex,
+    sync::{
+        Mutex,
+        atomic::{AtomicUsize, Ordering},
+    },
     time::Duration,
 };
 
@@ -667,11 +670,28 @@ async fn remove_reviews(
     Ok(prs)
 }
 
+// removals in flight, the status bar shows them
+static CLEANINGS: AtomicUsize = AtomicUsize::new(0);
+
 fn remove_worktrees(app: &AppHandle, prs: Vec<GetSavedReviewRequest>) -> JoinHandle<()> {
     let repositories_dir = app.state::<AppState>().repositories_dir();
     let app = app.clone();
 
     tokio::task::spawn_blocking(move || {
+        let prs: Vec<_> = prs
+            .into_iter()
+            .filter(|pr| {
+                git::worktree_dir(&repositories_dir, &pr.owner, &pr.repository, pr.pr_number)
+                    .exists()
+            })
+            .collect();
+        if prs.is_empty() {
+            return;
+        }
+
+        CLEANINGS.fetch_add(1, Ordering::SeqCst);
+        emit_event(&app, Event::WorktreesCleaning);
+
         let _removing = WORKTREE_REMOVAL
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
@@ -686,8 +706,14 @@ fn remove_worktrees(app: &AppHandle, prs: Vec<GetSavedReviewRequest>) -> JoinHan
             }
         }
 
+        CLEANINGS.fetch_sub(1, Ordering::SeqCst);
         emit_event(&app, Event::WorktreesChanged);
     })
+}
+
+#[tauri::command]
+pub fn is_cleaning_worktrees() -> bool {
+    CLEANINGS.load(Ordering::SeqCst) > 0
 }
 
 const CLEANUP_JOB: &str = "review_cleanup";
@@ -715,7 +741,8 @@ pub(crate) fn start_review_cleanup(app: &AppHandle) {
     });
 }
 
-/// Removes what the setting asks for once a pull request is merged or closed.
+/// Removes what the setting asks for once a pull request is merged or closed,
+/// and the worktrees left without a review.
 async fn clean_up_reviews(app: &AppHandle) -> anyhow::Result<()> {
     let state = app.state::<AppState>();
     let cleanup = state.get_settings().review_cleanup;
@@ -723,13 +750,16 @@ async fn clean_up_reviews(app: &AppHandle) -> anyhow::Result<()> {
         return Ok(());
     }
 
+    let orphans = orphan_worktrees(app).await?;
     let finished = finished_reviews(app).await?;
-    if finished.is_empty() {
+
+    if cleanup == ReviewCleanup::Worktree {
+        remove_worktrees(app, worktrees_to_clean(finished, orphans));
         return Ok(());
     }
 
-    if cleanup == ReviewCleanup::Worktree {
-        remove_finished_worktrees(app, finished);
+    remove_worktrees(app, orphans);
+    if finished.is_empty() {
         return Ok(());
     }
 
@@ -740,15 +770,56 @@ async fn clean_up_reviews(app: &AppHandle) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Removes the worktrees of merged or closed pull requests, whatever the cleanup setting.
+/// Removes the worktrees of merged or closed pull requests and those left without a review,
+/// whatever the cleanup setting.
 #[tauri::command]
 pub async fn clean_up_worktrees(app: AppHandle) -> Result<()> {
+    let orphans = orphan_worktrees(&app).await?;
     let finished = finished_reviews(&app).await?;
-    remove_finished_worktrees(&app, finished)
+
+    remove_worktrees(&app, worktrees_to_clean(finished, orphans))
         .await
         .map_err(anyhow::Error::from)?;
 
     Ok(())
+}
+
+fn worktrees_to_clean(
+    finished: Vec<ReviewListEntry>,
+    orphans: Vec<GetSavedReviewRequest>,
+) -> Vec<GetSavedReviewRequest> {
+    finished
+        .iter()
+        .map(ReviewListEntry::request)
+        .chain(orphans)
+        .collect()
+}
+
+/// Worktrees whose review was deleted, skipping those a review or an agent works on.
+async fn orphan_worktrees(app: &AppHandle) -> anyhow::Result<Vec<GetSavedReviewRequest>> {
+    let state = app.state::<AppState>();
+    let reviews: HashSet<GetSavedReviewRequest> = state
+        .code_review_store
+        .list_reviews()
+        .await?
+        .iter()
+        .map(ReviewListEntry::request)
+        .collect();
+
+    let repositories_dir = state.repositories_dir();
+    let worktrees =
+        tokio::task::spawn_blocking(move || git::list_worktrees(&repositories_dir)).await?;
+
+    let mut orphans = vec![];
+    for pr in worktrees {
+        if reviews.contains(&pr) || is_in_use(&state, &pr).await? {
+            continue;
+        }
+
+        orphans.push(pr);
+    }
+
+    Ok(orphans)
 }
 
 /// Reviews of merged or closed pull requests, skipping those a review or an agent works on.
@@ -758,7 +829,7 @@ async fn finished_reviews(app: &AppHandle) -> anyhow::Result<Vec<ReviewListEntry
     let mut finished = vec![];
     for review in state.code_review_store.list_reviews().await? {
         match is_finished(app, &review).await {
-            Ok(true) if !is_in_use(&state, &review).await? => finished.push(review),
+            Ok(true) if !is_in_use(&state, &review.request()).await? => finished.push(review),
             Ok(_) => {}
             Err(e) => log::warn!(
                 "Unable to fetch the state of {}/{}#{}: {e}",
@@ -770,23 +841,6 @@ async fn finished_reviews(app: &AppHandle) -> anyhow::Result<Vec<ReviewListEntry
     }
 
     Ok(finished)
-}
-
-fn remove_finished_worktrees(app: &AppHandle, finished: Vec<ReviewListEntry>) -> JoinHandle<()> {
-    let repositories_dir = app.state::<AppState>().repositories_dir();
-    let prs = finished
-        .into_iter()
-        .filter(|r| {
-            git::worktree_dir(&repositories_dir, &r.owner, &r.repository, r.pr_number).exists()
-        })
-        .map(|r| GetSavedReviewRequest {
-            owner: r.owner,
-            repository: r.repository,
-            pr_number: r.pr_number,
-        })
-        .collect();
-
-    remove_worktrees(app, prs)
 }
 
 fn is_merged_or_closed(state: Option<PullRequestState>) -> bool {
@@ -830,7 +884,7 @@ async fn is_finished(app: &AppHandle, review: &ReviewListEntry) -> anyhow::Resul
 }
 
 /// Whether a review or an agent is running in the pull request's worktree.
-async fn is_in_use(state: &AppState, review: &ReviewListEntry) -> anyhow::Result<bool> {
+async fn is_in_use(state: &AppState, review: &GetSavedReviewRequest) -> anyhow::Result<bool> {
     let job_id = review_job_id(&review.owner, &review.repository, review.pr_number);
     if let Some(JobStatus::Running | JobStatus::Queued) = state.job_runner.status(&job_id) {
         return Ok(true);

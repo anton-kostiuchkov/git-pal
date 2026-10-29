@@ -57,6 +57,8 @@ import { reviewJobId } from "./utils";
 
 const REFRESH_MS = minutesToMilliseconds(1);
 const SIZE_KEY = ["worktrees-size"];
+const CLEANING_KEY = ["worktrees-cleaning"];
+const CLEANING_LABEL = "Cleaning…";
 const ACTIVE_STATUSES: JobStatus[] = ["queued", "running"];
 const BUILT_IN_TEMPLATE = "Built-in template";
 
@@ -271,15 +273,26 @@ function WorktreesItem() {
     queryKey: SIZE_KEY,
     queryFn: commands.worktreesSize,
   });
+  // background cleanups included, not only the button's
+  const { data: isCleaning = false } = useQuery({
+    queryKey: CLEANING_KEY,
+    queryFn: commands.isCleaningWorktrees,
+  });
   const cleanUp = useMutation({ mutationFn: commands.cleanUpWorktrees });
+  const isBusy = isCleaning || cleanUp.isPending;
 
   useEffect(() => {
-    const listener = commands.onWorktreesChanged(() =>
-      queryClient.invalidateQueries({ queryKey: SIZE_KEY }),
+    const changed = commands.onWorktreesChanged(() => {
+      queryClient.invalidateQueries({ queryKey: SIZE_KEY });
+      queryClient.invalidateQueries({ queryKey: CLEANING_KEY });
+    });
+    const cleaning = commands.onWorktreesCleaning(() =>
+      queryClient.invalidateQueries({ queryKey: CLEANING_KEY }),
     );
 
     return () => {
-      listener.then((unsub) => unsub());
+      changed.then((unsub) => unsub());
+      cleaning.then((unsub) => unsub());
     };
   }, [queryClient]);
 
@@ -295,8 +308,8 @@ function WorktreesItem() {
         <DropdownMenuTrigger
           render={<StatusButton aria-label="Disk used by review worktrees" />}
         >
-          <HardDrive />
-          {formatBytes(size)}
+          {isCleaning ? <Spinner className="size-3" /> : <HardDrive />}
+          {isCleaning ? CLEANING_LABEL : formatBytes(size)}
         </DropdownMenuTrigger>
         <DropdownMenuContent side="top" align="end" className="w-auto">
           <DropdownMenuItem onClick={() => commands.openRepositoriesDir()}>
@@ -310,12 +323,12 @@ function WorktreesItem() {
           render={
             <StatusButton
               aria-label={cleanUpLabel}
-              disabled={cleanUp.isPending}
+              disabled={isBusy}
               onClick={() => cleanUp.mutate()}
             />
           }
         >
-          {cleanUp.isPending ? <Spinner className="size-3" /> : <Brush />}
+          {isBusy ? <Spinner className="size-3" /> : <Brush />}
         </TooltipTrigger>
         <TooltipContent>{cleanUpLabel}</TooltipContent>
       </Tooltip>

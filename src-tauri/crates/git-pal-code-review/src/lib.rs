@@ -51,6 +51,16 @@ impl CodeReview {
     }
 }
 
+impl ReviewListEntry {
+    pub fn request(&self) -> GetSavedReviewRequest {
+        GetSavedReviewRequest {
+            owner: self.owner.clone(),
+            repository: self.repository.clone(),
+            pr_number: self.pr_number,
+        }
+    }
+}
+
 /// `?, ?, …`, one bound placeholder per id
 fn push_ids(query: &mut QueryBuilder<Sqlite>, ids: &[i64]) {
     let mut list = query.separated(", ");

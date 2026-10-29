@@ -316,6 +316,10 @@ function cleanUpWorktrees() {
   return invoke<void>("clean_up_worktrees");
 }
 
+function isCleaningWorktrees() {
+  return invoke<boolean>("is_cleaning_worktrees");
+}
+
 function openRepositoriesDir() {
   return invoke<void>("open_repositories_dir");
 }
@@ -472,6 +476,10 @@ function onWorktreesChanged(cb: () => void) {
   return listen("WorktreesChanged", cb);
 }
 
+function onWorktreesCleaning(cb: () => void) {
+  return listen("WorktreesCleaning", cb);
+}
+
 function useOnAuthMessage(cb: Parameters<typeof onAuthMessage>[0]) {
   const handler = useEffectEvent(cb);
 
@@ -539,6 +547,7 @@ export default {
   worktreePath,
   worktreesSize,
   cleanUpWorktrees,
+  isCleaningWorktrees,
   openRepositoriesDir,
   listEditors,
   openInEditor,
@@ -565,6 +574,7 @@ export default {
   onReviewSelected,
   onReviewsDeleted,
   onWorktreesChanged,
+  onWorktreesCleaning,
   agentSend,
   agentCancel,
   listModels,

@@ -378,6 +378,7 @@ pub enum Event {
     ReviewSelected(GetSavedReviewRequest),
     ReviewsDeleted(Vec<GetSavedReviewRequest>),
     WorktreesChanged,
+    WorktreesCleaning,
 }
 
 pub fn emit_event(handle: &AppHandle, event: Event) {
@@ -390,6 +391,7 @@ pub fn emit_event(handle: &AppHandle, event: Event) {
         Event::ReviewSelected(_) => "ReviewSelected",
         Event::ReviewsDeleted(_) => "ReviewsDeleted",
         Event::WorktreesChanged => "WorktreesChanged",
+        Event::WorktreesCleaning => "WorktreesCleaning",
     };
 
     handle
