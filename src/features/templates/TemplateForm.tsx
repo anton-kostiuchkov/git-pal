@@ -16,6 +16,7 @@ import { Textarea } from "~/components/ui/textarea";
 import type { ReviewTemplate, RiskLevel } from "~/models/code-review";
 
 import { useSaveTemplateMutation } from "./data-loader";
+import { LabelsField } from "./LabelsField";
 import { SkillsField } from "./SkillsField";
 
 interface FormValues {
@@ -26,10 +27,13 @@ interface FormValues {
   skills: string[];
   riskGuidelines: string;
   autoReview: boolean;
+  skipLabels: string[];
   autoApprove: boolean;
   autoApproveMaxRisk: RiskLevel;
   requireGreenCi: boolean;
 }
+
+const DEFAULT_SKIP_LABELS = ["do not merge", "do not review"];
 
 // high would approve whatever the risk
 const MAX_RISKS: { value: RiskLevel; label: string }[] = [
@@ -92,6 +96,7 @@ function toFormValues(
     skills: template?.skills ?? [],
     riskGuidelines: template?.riskGuidelines ?? "",
     autoReview: template?.autoReview ?? false,
+    skipLabels: template?.skipLabels ?? DEFAULT_SKIP_LABELS,
     autoApprove: template?.autoApprove ?? false,
     autoApproveMaxRisk: template?.autoApproveMaxRisk ?? "minimal",
     requireGreenCi: template?.requireGreenCi ?? true,
@@ -117,6 +122,7 @@ export function TemplateForm({
     useForm<FormValues>({
       defaultValues: toFormValues(template, initialContent),
     });
+  const autoReview = useWatch({ control, name: "autoReview" });
   const autoApprove = useWatch({ control, name: "autoApprove" });
 
   useEffect(() => {
@@ -230,6 +236,25 @@ export function TemplateForm({
             label="Auto-review"
             hint="Review requests made to you as code owner"
           />
+          {autoReview && (
+            <div className="col-span-3 grid grid-cols-subgrid items-center">
+              <span />
+              <span className="text-sm">Skip labels</span>
+              <Controller
+                control={control}
+                name="skipLabels"
+                render={({ field }) => (
+                  <LabelsField value={field.value} onChange={field.onChange} />
+                )}
+              />
+              <span />
+              <span />
+              <span className="text-xs text-muted-foreground">
+                Drafts and labeled pull requests wait until ready or unlabeled.
+                Case, spaces, dashes and underscores are ignored.
+              </span>
+            </div>
+          )}
           <SwitchField
             control={control}
             name="autoApprove"

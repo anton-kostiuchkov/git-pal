@@ -228,6 +228,32 @@ pub fn approval_blocker(
     None
 }
 
+fn normalize_label(label: &str) -> String {
+    label
+        .chars()
+        .filter(|c| !matches!(c, ' ' | '-' | '_'))
+        .flat_map(char::to_lowercase)
+        .collect()
+}
+
+/// Why the pull request isn't auto reviewed yet, `None` when it can be.
+pub fn auto_review_blocker(
+    is_draft: bool,
+    labels: &[String],
+    skip_labels: &[String],
+) -> Option<String> {
+    if is_draft {
+        return Some("Draft".into());
+    }
+
+    let skipped: Vec<String> = skip_labels.iter().map(|l| normalize_label(l)).collect();
+
+    labels
+        .iter()
+        .find(|label| skipped.contains(&normalize_label(label)))
+        .map(|label| format!("Labeled {label}"))
+}
+
 /// Extract JSON from text that may be wrapped in markdown code blocks.
 fn extract_json(text: &str) -> &str {
     let trimmed = text.trim();
@@ -287,6 +313,17 @@ mod tests {
             publish: false,
             posted,
         }
+    }
+
+    #[test]
+    fn skips_drafts_and_labels_whatever_their_case_and_separators() {
+        let skip = ["do not merge".to_string()];
+        let labels = |names: &[&str]| names.iter().map(|n| n.to_string()).collect::<Vec<_>>();
+
+        assert!(auto_review_blocker(true, &[], &skip).is_some());
+        assert!(auto_review_blocker(false, &labels(&["DO_NOT-Merge"]), &skip).is_some());
+        assert!(auto_review_blocker(false, &labels(&["do not merge yet"]), &skip).is_none());
+        assert!(auto_review_blocker(false, &labels(&["bug"]), &skip).is_none());
     }
 
     #[test]

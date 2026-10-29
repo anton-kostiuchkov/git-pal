@@ -190,7 +190,7 @@ pub enum AutoApproval {
     Skipped { reason: String },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "code-review.ts")]
 pub struct GetSavedReviewRequest {
@@ -321,6 +321,9 @@ pub struct ReviewTemplate {
     pub risk_guidelines: Option<String>,
     /// Reviews requests to the viewer as code owner without asking
     pub auto_review: bool,
+    /// Labels keeping a pull request from being auto reviewed
+    #[sqlx(json)]
+    pub skip_labels: Vec<String>,
     /// Approves reviews up to `auto_approve_max_risk` without asking
     pub auto_approve: bool,
     #[sqlx(json)]
@@ -342,6 +345,7 @@ pub struct ReviewTemplateInput {
     pub skills: Vec<String>,
     pub risk_guidelines: Option<String>,
     pub auto_review: bool,
+    pub skip_labels: Vec<String>,
     pub auto_approve: bool,
     pub auto_approve_max_risk: RiskLevel,
     pub require_green_ci: bool,

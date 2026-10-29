@@ -45,10 +45,26 @@ pub(super) fn start_monitoring(app_handle: &tauri::AppHandle) {
             async move {
                 log::debug!("Monitoring tick");
                 let state: State<'_, AppState> = handle.state();
+                let Some(requests) = state.handle_pr_monitor().await else {
+                    return;
+                };
 
-                for request in state.handle_pr_monitor().await {
-                    if let Err(e) = review::auto_review(&handle, request).await {
-                        log::error!("Auto review failed: {e}");
+                // retried until marked ready or unlabeled, dropped once no longer requested
+                let retries: Vec<_> = state
+                    .skipped_auto_reviews
+                    .lock()
+                    .unwrap()
+                    .drain()
+                    .filter(|r| requests.current.contains(r))
+                    .collect();
+
+                for request in requests.new.into_iter().chain(retries) {
+                    match review::auto_review(&handle, request.clone()).await {
+                        Ok(true) => {
+                            state.skipped_auto_reviews.lock().unwrap().insert(request);
+                        }
+                        Ok(false) => {}
+                        Err(e) => log::error!("Auto review failed: {e}"),
                     }
                 }
             }

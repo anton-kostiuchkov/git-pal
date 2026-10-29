@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     env, fs,
     path::PathBuf,
     sync::{self, Mutex},
@@ -57,6 +57,14 @@ impl From<&Update> for AppUpdate {
     }
 }
 
+/// Pull requests requesting the viewer's review.
+pub struct ReviewRequests {
+    /// Not seen before, just notified
+    pub new: Vec<GetSavedReviewRequest>,
+    /// Every one still requested
+    pub current: Vec<GetSavedReviewRequest>,
+}
+
 pub struct AppState {
     pub github_client: github::Client,
     pub oauth_client: oauth::Client,
@@ -70,6 +78,8 @@ pub struct AppState {
     pub agent_store: AgentStore,
     pub agent_runs: Mutex<HashMap<i64, oneshot::Sender<()>>>,
     pub requested_review: Mutex<Option<GetSavedReviewRequest>>,
+    /// Auto reviews skipped for a draft or a skip label, retried while still requested
+    pub skipped_auto_reviews: Mutex<HashSet<GetSavedReviewRequest>>,
     pub pending_update: Mutex<Option<PendingUpdate>>,
     app_dir: PathBuf,
 }
@@ -102,6 +112,7 @@ impl AppState {
             agent_store: AgentStore::new(db),
             agent_runs: Mutex::new(HashMap::new()),
             requested_review: Mutex::new(None),
+            skipped_auto_reviews: Mutex::new(HashSet::new()),
             pending_update: Mutex::new(None),
         }
     }
@@ -150,8 +161,8 @@ impl AppState {
         self.app_dir.join("repositories")
     }
 
-    /// Notifies the new review requests and returns them.
-    pub async fn handle_pr_monitor(&self) -> Vec<GetSavedReviewRequest> {
+    /// Notifies the new review requests, `None` when they couldn't be fetched.
+    pub async fn handle_pr_monitor(&self) -> Option<ReviewRequests> {
         let response = self
             .github_client
             .find_pull_requests(
@@ -178,6 +189,8 @@ impl AppState {
                     })
                     .collect::<Vec<_>>();
 
+                let current = data.iter().map(|(_, pr)| saved_request(pr)).collect();
+
                 let mut queue: Vec<query::search_pull_request::PullRequest> = Vec::new();
                 {
                     let mut prs = self.pull_requests.lock().unwrap();
@@ -190,14 +203,7 @@ impl AppState {
                     }
                 }
 
-                let requests = queue
-                    .iter()
-                    .map(|pr| GetSavedReviewRequest {
-                        owner: pr.repository.owner.login.clone(),
-                        repository: pr.repository.name.clone(),
-                        pr_number: pr.number,
-                    })
-                    .collect();
+                let new = queue.iter().map(saved_request).collect();
 
                 for pr in queue {
                     self.notification_manager
@@ -215,13 +221,21 @@ impl AppState {
                         .await;
                 }
 
-                requests
+                Some(ReviewRequests { new, current })
             }
             Err(err) => {
                 log::error!("Error fetching review requested pull requests: {}", err);
-                vec![]
+                None
             }
         }
+    }
+}
+
+fn saved_request(pr: &query::search_pull_request::PullRequest) -> GetSavedReviewRequest {
+    GetSavedReviewRequest {
+        owner: pr.repository.owner.login.clone(),
+        repository: pr.repository.name.clone(),
+        pr_number: pr.number,
     }
 }
 

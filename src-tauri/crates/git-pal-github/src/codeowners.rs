@@ -22,6 +22,8 @@ const REVIEW_REQUESTS_QUERY: &str =
     "query ReviewRequests($owner: String!, $name: String!, $number: Int!) {
   repository(owner: $owner, name: $name) {
     pullRequest(number: $number) {
+      isDraft
+      labels(first: 100) { nodes { name } }
       reviewRequests(first: 100) {
         nodes {
           asCodeOwner
@@ -119,9 +121,30 @@ struct ReviewRequests {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+struct Label {
+    name: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct Labels {
+    nodes: Vec<Label>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ReviewRequestsPullRequest {
+    is_draft: bool,
+    labels: Option<Labels>,
     review_requests: Option<ReviewRequests>,
+}
+
+/// What decides whether a review request is auto reviewed.
+#[derive(Debug, Clone, Default)]
+pub struct ReviewRequestStatus {
+    /// The viewer, or one of their teams, is requested as code owner
+    pub as_code_owner: bool,
+    pub is_draft: bool,
+    pub labels: Vec<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -279,8 +302,10 @@ impl Client {
         Ok(Some(owned_by(&text, &request.files, &handles)))
     }
 
-    /// Whether the viewer, or one of their teams, is requested to review as code owner.
-    pub async fn requested_as_code_owner(&self, request: &GetPullRequestRequest) -> Result<bool> {
+    pub async fn review_request_status(
+        &self,
+        request: &GetPullRequestRequest,
+    ) -> Result<ReviewRequestStatus> {
         let body = QueryBody {
             variables: ReviewRequestsVariables {
                 owner: request.owner.clone(),
@@ -292,13 +317,19 @@ impl Client {
         };
 
         let res: GraphQLResponse<ReviewRequestsData> = self.send_graphql(&body).await?;
-        let requests = res
+        let Some(pr) = res
             .data
             .and_then(|data| data.repository)
             .and_then(|r| r.pull_request)
-            .and_then(|pr| pr.review_requests)
-            .map(|r| r.nodes)
+        else {
+            return Ok(ReviewRequestStatus::default());
+        };
+
+        let labels = pr
+            .labels
+            .map(|l| l.nodes.into_iter().map(|label| label.name).collect())
             .unwrap_or_default();
+        let requests = pr.review_requests.map(|r| r.nodes).unwrap_or_default();
 
         let code_owners: Vec<String> = requests
             .iter()
@@ -306,13 +337,20 @@ impl Client {
             .filter_map(|r| r.requested_reviewer.as_ref().and_then(reviewer_handle))
             .collect();
 
+        let mut status = ReviewRequestStatus {
+            as_code_owner: false,
+            is_draft: pr.is_draft,
+            labels,
+        };
+
         if code_owners.is_empty() {
-            return Ok(false);
+            return Ok(status);
         }
 
         let handles = self.owner_handles().await?;
+        status.as_code_owner = code_owners.iter().any(|h| handles.contains(h));
 
-        Ok(code_owners.iter().any(|h| handles.contains(h)))
+        Ok(status)
     }
 }
 

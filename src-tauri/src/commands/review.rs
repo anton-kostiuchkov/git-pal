@@ -390,11 +390,10 @@ fn ci_blocker(pr: &PullRequest) -> Option<&'static str> {
     }
 }
 
-/// Reviews a code owner request when its template allows it, unless the pull request is already listed.
 pub(crate) async fn auto_review(
     app: &AppHandle,
     request: GetSavedReviewRequest,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<bool> {
     let state: State<'_, AppState> = app.state();
     let store = &state.code_review_store;
     let GetSavedReviewRequest {
@@ -408,7 +407,7 @@ pub(crate) async fn auto_review(
         .await?
         .is_some()
     {
-        return Ok(());
+        return Ok(false);
     }
 
     let template = store
@@ -419,7 +418,7 @@ pub(crate) async fn auto_review(
         )
         .await?;
     let Some(template) = template.filter(|t| t.auto_review) else {
-        return Ok(());
+        return Ok(false);
     };
 
     let pr = GetPullRequestRequest {
@@ -427,8 +426,16 @@ pub(crate) async fn auto_review(
         repository: repository.clone(),
         number: pr_number,
     };
-    if !state.github_client.requested_as_code_owner(&pr).await? {
-        return Ok(());
+    let status = state.github_client.review_request_status(&pr).await?;
+    if !status.as_code_owner {
+        return Ok(false);
+    }
+
+    if let Some(reason) =
+        review::auto_review_blocker(status.is_draft, &status.labels, &template.skip_labels)
+    {
+        log::info!("Auto review of {owner}/{repository}#{pr_number} skipped: {reason}");
+        return Ok(true);
     }
 
     review_pull_request(
@@ -446,7 +453,7 @@ pub(crate) async fn auto_review(
 
     refresh_review_badge(app);
 
-    Ok(())
+    Ok(false)
 }
 
 async fn notify_review(app: &AppHandle, message: &str, metadata: HashMap<String, String>) {

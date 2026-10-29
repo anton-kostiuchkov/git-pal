@@ -78,11 +78,15 @@ riskGuidelines: string | null,
  */
 autoReview: boolean, 
 /**
+ * Labels keeping a pull request from being auto reviewed
+ */
+skipLabels: Array<string>, 
+/**
  * Approves reviews up to `auto_approve_max_risk` without asking
  */
 autoApprove: boolean, autoApproveMaxRisk: RiskLevel, requireGreenCi: boolean, position: number, createdAt: string, updatedAt: string, };
 
-export type ReviewTemplateInput = { name: string, content: string, matcher: string | null, isDefault: boolean, skills: Array<string>, riskGuidelines: string | null, autoReview: boolean, autoApprove: boolean, autoApproveMaxRisk: RiskLevel, requireGreenCi: boolean, };
+export type ReviewTemplateInput = { name: string, content: string, matcher: string | null, isDefault: boolean, skills: Array<string>, riskGuidelines: string | null, autoReview: boolean, skipLabels: Array<string>, autoApprove: boolean, autoApproveMaxRisk: RiskLevel, requireGreenCi: boolean, };
 
 export type Risk = { level: RiskLevel, reasons: Array<string>, factors: Array<RiskFactor>, 
 /**
