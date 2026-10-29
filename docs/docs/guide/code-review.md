@@ -38,6 +38,7 @@ Click **Manage templates…** at the bottom of the reviews list to create one:
 | When to use | A regex on `owner/repo`, e.g. `^acme/` |
 | Default template | Used when no matcher accepts the repository |
 | Auto-review | Reviews pull requests requesting you, or your team, as code owner |
+| Skip approved | Doesn't auto-review pull requests whose required reviews are already met, on by default |
 | Skip labels | Labels keeping a pull request from being auto-reviewed, `do not merge` and `do not review` by default. Case, spaces, dashes and underscores are ignored |
 | Auto-approve | Approves [clean reviews](#auto-approve) without asking |
 | Max risk | Highest risk auto-approved: minimal (default), low or medium |
@@ -89,7 +90,7 @@ With **Auto-approve** on, a review is approved when it ends if:
 - no commits were pushed during the review,
 - CI checks passed, unless **Require green CI** is off.
 
-Otherwise, hover the risk to see why it wasn't approved. With **Auto-review** on and [review request notifications](./settings#notifications) enabled, code owner review requests are reviewed as they arrive, so they can be approved without you. Drafts and pull requests with a skip label wait until marked ready or unlabeled.
+Otherwise, hover the risk to see why it wasn't approved. With **Auto-review** on and [review request notifications](./settings#notifications) enabled, code owner review requests are reviewed as they arrive, so they can be approved without you. Drafts, approved pull requests and those with a skip label wait until marked ready, no longer approved or unlabeled.
 
 ### New commits
 
@@ -129,8 +130,8 @@ Existing review threads show in the diff. Open them on GitHub, ask the agent abo
 | --- | --- |
 | Todo | Not reviewed yet |
 | In progress | An agent is reviewing, or there's something to submit |
-| Approved | You approved |
-| Change requested | You requested changes |
+| Approved | You approved, or, on the open pull request, its required reviews are met on GitHub |
+| Change requested | You, or a reviewer on GitHub for the open pull request, requested changes |
 | Feedback submitted | You commented |
 | Merged, Closed | Merged or closed on GitHub before you submitted a review |
 
