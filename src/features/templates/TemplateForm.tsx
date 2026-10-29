@@ -28,6 +28,7 @@ interface FormValues {
   riskGuidelines: string;
   autoReview: boolean;
   skipLabels: string[];
+  skipApproved: boolean;
   autoApprove: boolean;
   autoApproveMaxRisk: RiskLevel;
   requireGreenCi: boolean;
@@ -63,7 +64,7 @@ function Field({ label, hint, className, children }: FieldProps) {
 
 interface SwitchFieldProps {
   control: Control<FormValues>;
-  name: "autoReview" | "autoApprove" | "requireGreenCi";
+  name: "autoReview" | "skipApproved" | "autoApprove" | "requireGreenCi";
   label: string;
   hint: string;
 }
@@ -97,6 +98,7 @@ function toFormValues(
     riskGuidelines: template?.riskGuidelines ?? "",
     autoReview: template?.autoReview ?? false,
     skipLabels: template?.skipLabels ?? DEFAULT_SKIP_LABELS,
+    skipApproved: template?.skipApproved ?? true,
     autoApprove: template?.autoApprove ?? false,
     autoApproveMaxRisk: template?.autoApproveMaxRisk ?? "minimal",
     requireGreenCi: template?.requireGreenCi ?? true,
@@ -237,23 +239,34 @@ export function TemplateForm({
             hint="Review requests made to you as code owner"
           />
           {autoReview && (
-            <div className="col-span-3 grid grid-cols-subgrid items-center">
-              <span />
-              <span className="text-sm">Skip labels</span>
-              <Controller
+            <>
+              <SwitchField
                 control={control}
-                name="skipLabels"
-                render={({ field }) => (
-                  <LabelsField value={field.value} onChange={field.onChange} />
-                )}
+                name="skipApproved"
+                label="Skip approved"
+                hint="Pull requests whose required reviews are already met"
               />
-              <span />
-              <span />
-              <span className="text-xs text-muted-foreground">
-                Drafts and labeled pull requests wait until ready or unlabeled.
-                Case, spaces, dashes and underscores are ignored.
-              </span>
-            </div>
+              <div className="col-span-3 grid grid-cols-subgrid items-center">
+                <span />
+                <span className="text-sm">Skip labels</span>
+                <Controller
+                  control={control}
+                  name="skipLabels"
+                  render={({ field }) => (
+                    <LabelsField
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
+                <span />
+                <span />
+                <span className="text-xs text-muted-foreground">
+                  Drafts and labeled pull requests wait until ready or
+                  unlabeled. Case, spaces, dashes and underscores are ignored.
+                </span>
+              </div>
+            </>
           )}
           <SwitchField
             control={control}

@@ -432,7 +432,7 @@ pub(crate) async fn auto_review(
     }
 
     if let Some(reason) =
-        review::auto_review_blocker(status.is_draft, &status.labels, &template.skip_labels)
+        review::auto_review_blocker(&status, &template.skip_labels, template.skip_approved)
     {
         log::info!("Auto review of {owner}/{repository}#{pr_number} skipped: {reason}");
         return Ok(true);

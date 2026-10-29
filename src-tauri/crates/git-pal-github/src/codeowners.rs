@@ -23,6 +23,7 @@ const REVIEW_REQUESTS_QUERY: &str =
   repository(owner: $owner, name: $name) {
     pullRequest(number: $number) {
       isDraft
+      reviewDecision
       labels(first: 100) { nodes { name } }
       reviewRequests(first: 100) {
         nodes {
@@ -38,6 +39,7 @@ const REVIEW_REQUESTS_QUERY: &str =
   }
 }";
 const REVIEW_REQUESTS_OPERATION: &str = "ReviewRequests";
+const APPROVED: &str = "APPROVED";
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -134,6 +136,7 @@ struct Labels {
 #[serde(rename_all = "camelCase")]
 struct ReviewRequestsPullRequest {
     is_draft: bool,
+    review_decision: Option<String>,
     labels: Option<Labels>,
     review_requests: Option<ReviewRequests>,
 }
@@ -144,6 +147,8 @@ pub struct ReviewRequestStatus {
     /// The viewer, or one of their teams, is requested as code owner
     pub as_code_owner: bool,
     pub is_draft: bool,
+    /// The base branch's required reviews are met
+    pub is_approved: bool,
     pub labels: Vec<String>,
 }
 
@@ -340,6 +345,7 @@ impl Client {
         let mut status = ReviewRequestStatus {
             as_code_owner: false,
             is_draft: pr.is_draft,
+            is_approved: pr.review_decision.as_deref() == Some(APPROVED),
             labels,
         };
 

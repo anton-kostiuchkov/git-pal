@@ -324,6 +324,8 @@ pub struct ReviewTemplate {
     /// Labels keeping a pull request from being auto reviewed
     #[sqlx(json)]
     pub skip_labels: Vec<String>,
+    /// Skips auto reviewing pull requests whose required reviews are met
+    pub skip_approved: bool,
     /// Approves reviews up to `auto_approve_max_risk` without asking
     pub auto_approve: bool,
     #[sqlx(json)]
@@ -346,6 +348,7 @@ pub struct ReviewTemplateInput {
     pub risk_guidelines: Option<String>,
     pub auto_review: bool,
     pub skip_labels: Vec<String>,
+    pub skip_approved: bool,
     pub auto_approve: bool,
     pub auto_approve_max_risk: RiskLevel,
     pub require_green_ci: bool,

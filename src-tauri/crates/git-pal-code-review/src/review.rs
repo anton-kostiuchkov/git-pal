@@ -1,6 +1,7 @@
 use std::{collections::HashMap, path::Path};
 
 use anyhow::Result;
+use git_pal_github::codeowners::ReviewRequestStatus;
 use git_pal_harness::Harness;
 
 use crate::models::{
@@ -238,17 +239,22 @@ fn normalize_label(label: &str) -> String {
 
 /// Why the pull request isn't auto reviewed yet, `None` when it can be.
 pub fn auto_review_blocker(
-    is_draft: bool,
-    labels: &[String],
+    status: &ReviewRequestStatus,
     skip_labels: &[String],
+    skip_approved: bool,
 ) -> Option<String> {
-    if is_draft {
+    if status.is_draft {
         return Some("Draft".into());
+    }
+
+    if skip_approved && status.is_approved {
+        return Some("Already approved".into());
     }
 
     let skipped: Vec<String> = skip_labels.iter().map(|l| normalize_label(l)).collect();
 
-    labels
+    status
+        .labels
         .iter()
         .find(|label| skipped.contains(&normalize_label(label)))
         .map(|label| format!("Labeled {label}"))
@@ -316,14 +322,27 @@ mod tests {
     }
 
     #[test]
-    fn skips_drafts_and_labels_whatever_their_case_and_separators() {
+    fn skips_drafts_approved_and_labels_whatever_their_case_and_separators() {
         let skip = ["do not merge".to_string()];
-        let labels = |names: &[&str]| names.iter().map(|n| n.to_string()).collect::<Vec<_>>();
+        let labeled = |name: &str| ReviewRequestStatus {
+            labels: vec![name.to_string()],
+            ..Default::default()
+        };
+        let draft = ReviewRequestStatus {
+            is_draft: true,
+            ..Default::default()
+        };
+        let approved = ReviewRequestStatus {
+            is_approved: true,
+            ..Default::default()
+        };
 
-        assert!(auto_review_blocker(true, &[], &skip).is_some());
-        assert!(auto_review_blocker(false, &labels(&["DO_NOT-Merge"]), &skip).is_some());
-        assert!(auto_review_blocker(false, &labels(&["do not merge yet"]), &skip).is_none());
-        assert!(auto_review_blocker(false, &labels(&["bug"]), &skip).is_none());
+        assert!(auto_review_blocker(&draft, &skip, false).is_some());
+        assert!(auto_review_blocker(&approved, &skip, true).is_some());
+        assert!(auto_review_blocker(&approved, &skip, false).is_none());
+        assert!(auto_review_blocker(&labeled("DO_NOT-Merge"), &skip, true).is_some());
+        assert!(auto_review_blocker(&labeled("do not merge yet"), &skip, true).is_none());
+        assert!(auto_review_blocker(&labeled("bug"), &skip, true).is_none());
     }
 
     #[test]
