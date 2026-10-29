@@ -38,6 +38,7 @@ Click **Manage templates…** at the bottom of the reviews list to create one:
 | When to use | A regex on `owner/repo`, e.g. `^acme/` |
 | Default template | Used when no matcher accepts the repository |
 | Auto-review | Reviews pull requests requesting you, or your team, as code owner |
+| Skip labels | Labels keeping a pull request from being auto-reviewed, `do not merge` and `do not review` by default. Case, spaces, dashes and underscores are ignored |
 | Auto-approve | Approves [clean reviews](#auto-approve) without asking |
 | Max risk | Highest risk auto-approved: minimal (default), low or medium |
 | Require green CI | Auto-approves only once CI checks pass |
@@ -88,7 +89,7 @@ With **Auto-approve** on, a review is approved when it ends if:
 - no commits were pushed during the review,
 - CI checks passed, unless **Require green CI** is off.
 
-Otherwise, hover the risk to see why it wasn't approved. With **Auto-review** on and [review request notifications](./settings#notifications) enabled, code owner review requests are reviewed as they arrive, so they can be approved without you.
+Otherwise, hover the risk to see why it wasn't approved. With **Auto-review** on and [review request notifications](./settings#notifications) enabled, code owner review requests are reviewed as they arrive, so they can be approved without you. Drafts and pull requests with a skip label wait until marked ready or unlabeled.
 
 ### New commits
 
