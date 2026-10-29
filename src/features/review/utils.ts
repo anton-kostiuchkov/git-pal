@@ -5,6 +5,7 @@ import type {
   ReviewComment,
 } from "~/models/code-review";
 import type { InlineComment } from "~/models/conversation";
+import type { PullRequestReviewDecision } from "~/models/get-pull-request";
 
 // URL schemes and hosts are case-insensitive
 const PR_URL_REGEX = /^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/i;
@@ -240,6 +241,8 @@ export interface ReviewProgress {
   /** Notes not posted yet */
   pendingCount: number;
   prState?: PullRequestState | null;
+  /** GitHub's, whether the branch's required reviews are met */
+  reviewDecision?: PullRequestReviewDecision | null;
 }
 
 export function reviewStatus(
@@ -261,6 +264,8 @@ export function reviewStatus(
   // nothing left to review
   if (review.prState === "merged") return "merged";
   if (review.prState === "closed") return "closed";
+  if (review.reviewDecision === "APPROVED") return "approved";
+  if (review.reviewDecision === "CHANGES_REQUESTED") return "changesRequested";
   if (review.reviewed || review.noteCount > 0) return "inProgress";
 
   return "todo";

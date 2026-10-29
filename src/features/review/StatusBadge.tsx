@@ -101,7 +101,10 @@ export function LiveStatusBadge({
 
   return (
     <StatusBadge
-      status={reviewStatus({ ...review, prState }, latestHeadSha)}
+      status={reviewStatus(
+        { ...review, prState, reviewDecision: pullRequest?.reviewDecision },
+        latestHeadSha,
+      )}
       className={className}
     />
   );
